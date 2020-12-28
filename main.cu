@@ -56,7 +56,10 @@ __global__ void rm_kernel(float* dev_infoset_data, unsigned int offset_current_s
     }
 }
 
-__global__ void pokus_reach_probabilities(EFG_NODE ** nodes) {
+__global__ void pokus_reach_probabilities(EFG_NODE ** nodes) { // ale ja chci counterfactual reach prob! takze vynechat najake hrace. v EFG_NODE bude jaky hrac to je
+    // reach probs se pusti na 2D mrizce
+    // TODO add expected values, ktere se pusti jako 1D na EFG NODES reprezentujici terminalni nodes, bude se muset pouzit atomicka operace pricteni za akci;
+    //  EFG_NODE musi mit pole ukazatelu potomku a ukazatel do infosetu pro vypocet cfv.
     int thread_id = threadIdx.x;
 
     if (thread_id == 0) {
@@ -67,7 +70,7 @@ __global__ void pokus_reach_probabilities(EFG_NODE ** nodes) {
         printf("node %p\n", node);
 
         while (node) {
-            printf("%f", node->value);
+            printf("value %f, parent %p\n", node->value, node->parent);
 
             node = node->parent;
         }
