@@ -9,3 +9,10 @@ set_target_properties(
         gpucfr
         PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON)
+
+add_executable(gpucfr2 main2.cu)
+
+set_target_properties(
+        gpucfr2
+        PROPERTIES
+        CUDA_SEPARABLE_COMPILATION ON)
