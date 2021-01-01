@@ -31,6 +31,8 @@ typedef struct efg_node_t {
 typedef struct node_t {
     int row;
     int column;
+    int childs_cnt;
+    struct node_t **childs;
 } NODE;
 
 
@@ -42,6 +44,8 @@ int main() {
     if (node1) {
         node1->row = 1;
         node1->column = 1;
+        node1->childs_cnt = 0;
+        node1->childs = (NODE**) malloc(sizeof(NODE**)*2);
     }  else {
         printf("Error: malloc node1\n");
         return 1;
@@ -51,6 +55,8 @@ int main() {
     if (node2) {
         node2->row = 2;
         node2->column = 1;
+        node2->childs_cnt = 0;
+        node2->childs = NULL;
     }  else {
         printf("Error: malloc node2\n");
         return 1;
@@ -60,11 +66,15 @@ int main() {
     if (node3) {
         node3->row = 2;
         node3->column = 1;
+        node3->childs_cnt = 0;
+        node3->childs = NULL;
     }  else {
         printf("Error: malloc node2\n");
         return 1;
     }
-//    NODE *node4 = (NODE*) malloc(node_mem_size);
+
+    node1->childs[node1->childs_cnt++] = node2;
+    node1->childs[node1->childs_cnt++] = node3;
 
     int node_levels_size = 2;
     int* node_levels = (int *) malloc(sizeof(int) * node_levels_size);
@@ -107,6 +117,11 @@ int main() {
             printf("%p\n", node);
         }
 
+    }
+
+    printf("Root node childs:\n");
+    for (int i = 0; i < node1->childs_cnt; i++) {
+        printf(" child %d is %p\n", i, node1->childs[i]);
     }
 
     return 0;
