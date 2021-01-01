@@ -113,21 +113,226 @@ int main () {
     node1->information_set = dev_information_set1;
     node1->childs_count = 0;
     node1->childs = NULL;
-    // node 1 on GPU
     EFGNODE *dev_node1 = NULL;
-    CHECK_ERROR(cudaMalloc((void **) &dev_node1, efg_node_size)); // allocate on GPU
+    CHECK_ERROR(cudaMalloc((void **) &dev_node1, efg_node_size));
 
-    // player 2
+    // Player 2
+    // node 2
+    efg_node_size = sizeof(EFGNODE);
+    EFGNODE *node2 = (EFGNODE *) malloc(efg_node_size);
+    if (!node2) {
+        printf("Error malloc node2\n"); return 1;
+    }
+    node2->parent = dev_node1;
+    node2->player = 1;
+    node2->information_set = dev_information_set2;
+    node2->childs_count = 0;
+    node2->childs = NULL;
+    EFGNODE *dev_node2 = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node2, efg_node_size));
+
+    // node 3
+    efg_node_size = sizeof(EFGNODE);
+    EFGNODE *node3 = (EFGNODE *) malloc(efg_node_size);
+    if (!node3) {
+        printf("Error malloc node3\n"); return 1;
+    }
+    node3->parent = dev_node1;
+    node3->player = 1;
+    node3->information_set = dev_information_set2;
+    node3->childs_count = 0;
+    node3->childs = NULL;
+    EFGNODE *dev_node3 = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node3, efg_node_size));
+
+    // node 4
+    efg_node_size = sizeof(EFGNODE);
+    EFGNODE *node4 = (EFGNODE *) malloc(efg_node_size);
+    if (!node4) {
+        printf("Error malloc node4\n"); return 1;
+    }
+    node4->parent = dev_node1;
+    node4->player = 1;
+    node4->information_set = dev_information_set2;
+    node4->childs_count = 0;
+    node4->childs = NULL;
+    EFGNODE *dev_node4 = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node4, efg_node_size));
+
+    // Terminal nodes
+    // node 5
+    efg_node_size = sizeof(EFGNODE);
+    EFGNODE *node5 = (EFGNODE *) malloc(efg_node_size);
+    if (!node5) {
+        printf("Error malloc node5\n"); return 1;
+    }
+    node5->parent = dev_node1;
+    node5->player = 1;
+    node5->information_set = NULL;
+    node5->childs_count = 0;
+    node5->childs = NULL;
+    EFGNODE *dev_node5 = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node5, efg_node_size));
+    // node 6
+    efg_node_size = sizeof(EFGNODE);
+    EFGNODE *node6 = (EFGNODE *) malloc(efg_node_size);
+    if (!node6) {
+        printf("Error malloc node6\n"); return 1;
+    }
+    node6->parent = NULL;
+    node6->player = 1;
+    node6->information_set = NULL;
+    node6->childs_count = 0;
+    node6->childs = NULL;
+    EFGNODE *dev_node6 = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node6, efg_node_size));
+    // node 7
+    efg_node_size = sizeof(EFGNODE);
+    EFGNODE *node7 = (EFGNODE *) malloc(efg_node_size);
+    if (!node7) {
+        printf("Error malloc node7\n"); return 1;
+    }
+    node7->parent = NULL;
+    node7->player = 1;
+    node7->information_set = NULL;
+    node7->childs_count = 0;
+    node7->childs = NULL;
+    EFGNODE *dev_node7 = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node7, efg_node_size));
+    // node 8
+    efg_node_size = sizeof(EFGNODE);
+    EFGNODE *node8 = (EFGNODE *) malloc(efg_node_size);
+    if (!node8) {
+        printf("Error malloc node8\n"); return 1;
+    }
+    node8->parent = NULL;
+    node8->player = 1;
+    node8->information_set = NULL;
+    node8->childs_count = 0;
+    node8->childs = NULL;
+    EFGNODE *dev_node8 = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node8, efg_node_size));
+    // node 9
+    efg_node_size = sizeof(EFGNODE);
+    EFGNODE *node9 = (EFGNODE *) malloc(efg_node_size);
+    if (!node9) {
+        printf("Error malloc node9\n"); return 1;
+    }
+    node9->parent = NULL;
+    node9->player = 1;
+    node9->information_set = NULL;
+    node9->childs_count = 0;
+    node9->childs = NULL;
+    EFGNODE *dev_node9 = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node9, efg_node_size));
+    // node 10
+    efg_node_size = sizeof(EFGNODE);
+    EFGNODE *node10 = (EFGNODE *) malloc(efg_node_size);
+    if (!node10) {
+        printf("Error malloc node10\n"); return 1;
+    }
+    node10->parent = NULL;
+    node10->player = 1;
+    node10->information_set = NULL;
+    node10->childs_count = 0;
+    node10->childs = NULL;
+    EFGNODE *dev_node10 = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node10, efg_node_size));
+    // node 11
+    efg_node_size = sizeof(EFGNODE);
+    EFGNODE *node11 = (EFGNODE *) malloc(efg_node_size);
+    if (!node11) {
+        printf("Error malloc node11\n"); return 1;
+    }
+    node11->parent = NULL;
+    node11->player = 1;
+    node11->information_set = NULL;
+    node11->childs_count = 0;
+    node11->childs = NULL;
+    EFGNODE *dev_node11 = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node11, efg_node_size));
+    // node 12
+    efg_node_size = sizeof(EFGNODE);
+    EFGNODE *node12 = (EFGNODE *) malloc(efg_node_size);
+    if (!node12) {
+        printf("Error malloc node12\n"); return 1;
+    }
+    node12->parent = NULL;
+    node12->player = 1;
+    node12->information_set = NULL;
+    node12->childs_count = 0;
+    node12->childs = NULL;
+    EFGNODE *dev_node12 = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node12, efg_node_size));
+    // node 13
+    efg_node_size = sizeof(EFGNODE);
+    EFGNODE *node13 = (EFGNODE *) malloc(efg_node_size);
+    if (!node13) {
+        printf("Error malloc node13\n"); return 1;
+    }
+    node13->parent = NULL;
+    node13->player = 1;
+    node13->information_set = NULL;
+    node13->childs_count = 0;
+    node13->childs = NULL;
+    EFGNODE *dev_node13 = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node13, efg_node_size));
 
     // copy nodes to GPU memory
     CHECK_ERROR(cudaMemcpy(dev_node1, node1, efg_node_size, cudaMemcpyHostToDevice));
+
+    CHECK_ERROR(cudaMemcpy(dev_node2, node2, efg_node_size, cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(dev_node3, node3, efg_node_size, cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(dev_node4, node4, efg_node_size, cudaMemcpyHostToDevice));
+
+    CHECK_ERROR(cudaMemcpy(dev_node5, node5, efg_node_size, cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(dev_node6, node6, efg_node_size, cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(dev_node7, node7, efg_node_size, cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(dev_node8, node8, efg_node_size, cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(dev_node9, node9, efg_node_size, cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(dev_node10, node10, efg_node_size, cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(dev_node11, node11, efg_node_size, cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(dev_node12, node12, efg_node_size, cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(dev_node13, node13, efg_node_size, cudaMemcpyHostToDevice));
 
     /* FREE MEMORY */
     free(information_set1);
     free(information_set2);
 
+    free(node1);
+
+    free(node2);
+    free(node3);
+    free(node4);
+
+    free(node5);
+    free(node6);
+    free(node7);
+    free(node8);
+    free(node9);
+    free(node10);
+    free(node11);
+    free(node12);
+    free(node13);
+
     CHECK_ERROR(cudaFree(dev_information_set1));
     CHECK_ERROR(cudaFree(dev_information_set2));
+
+    CHECK_ERROR(cudaFree(dev_node1));
+
+    CHECK_ERROR(cudaFree(dev_node2));
+    CHECK_ERROR(cudaFree(dev_node3));
+    CHECK_ERROR(cudaFree(dev_node4));
+
+    CHECK_ERROR(cudaFree(dev_node5));
+    CHECK_ERROR(cudaFree(dev_node6));
+    CHECK_ERROR(cudaFree(dev_node7));
+    CHECK_ERROR(cudaFree(dev_node8));
+    CHECK_ERROR(cudaFree(dev_node9));
+    CHECK_ERROR(cudaFree(dev_node10));
+    CHECK_ERROR(cudaFree(dev_node11));
+    CHECK_ERROR(cudaFree(dev_node12));
+    CHECK_ERROR(cudaFree(dev_node13));
 
     return 0;
 }
