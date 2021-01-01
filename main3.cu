@@ -1,5 +1,19 @@
 #include <iostream>
 
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+
+// Simple function to check for CUDA runtime errors.
+static void handleCUDAError(
+        cudaError_t error,		// error code
+        const char *file,		// file within error was generated
+        int line )			// line where error occurs
+{
+    if (error != cudaSuccess) {	// any error -> display error message and terminate application
+        printf( "%s in %s at line %d\n", cudaGetErrorString( error ), file, line );
+        exit( EXIT_FAILURE );
+    }
+}
 
 typedef float INFORMATION_SET;
 
