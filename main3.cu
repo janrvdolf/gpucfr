@@ -278,6 +278,48 @@ int main () {
     EFGNODE *dev_node13 = NULL;
     CHECK_ERROR(cudaMalloc((void **) &dev_node13, efg_node_size));
 
+    // Childs
+    // node1
+    size_t efgnode_childs_size = 3 * sizeof(EFGNODE**);
+    EFGNODE **node1_childs = (EFGNODE**) malloc(efgnode_childs_size);
+    node1_childs[0] = dev_node2;
+    node1_childs[1] = dev_node3;
+    node1_childs[2] = dev_node4;
+    EFGNODE **dev_node1_childs = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node1_childs, efgnode_childs_size));
+    CHECK_ERROR(cudaMemcpy(dev_node1_childs, node1_childs, efg_node_size, cudaMemcpyHostToDevice));
+    node1->childs = dev_node1_childs;
+    // node2
+    efgnode_childs_size = 3 * sizeof(EFGNODE**);
+    EFGNODE **node2_childs = (EFGNODE**) malloc(efgnode_childs_size);
+    node2_childs[0] = dev_node5;
+    node2_childs[1] = dev_node6;
+    node2_childs[2] = dev_node7;
+    EFGNODE **dev_node2_childs = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node2_childs, efgnode_childs_size));
+    CHECK_ERROR(cudaMemcpy(dev_node2_childs, node2_childs, efg_node_size, cudaMemcpyHostToDevice));
+    node2->childs = dev_node2_childs;
+    // node3
+    efgnode_childs_size = 3 * sizeof(EFGNODE**);
+    EFGNODE **node3_childs = (EFGNODE**) malloc(efgnode_childs_size);
+    node3_childs[0] = dev_node8;
+    node3_childs[1] = dev_node9;
+    node3_childs[2] = dev_node10;
+    EFGNODE **dev_node3_childs = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node3_childs, efgnode_childs_size));
+    CHECK_ERROR(cudaMemcpy(dev_node3_childs, node3_childs, efg_node_size, cudaMemcpyHostToDevice));
+    node3->childs = dev_node3_childs;
+    // node4
+    efgnode_childs_size = 3 * sizeof(EFGNODE**);
+    EFGNODE **node4_childs = (EFGNODE**) malloc(efgnode_childs_size);
+    node4_childs[0] = dev_node11;
+    node4_childs[1] = dev_node12;
+    node4_childs[2] = dev_node13;
+    EFGNODE **dev_node4_childs = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_node4_childs, efgnode_childs_size));
+    CHECK_ERROR(cudaMemcpy(dev_node4_childs, node4_childs, efg_node_size, cudaMemcpyHostToDevice));
+    node4->childs = dev_node4_childs;
+
     // copy nodes to GPU memory
     CHECK_ERROR(cudaMemcpy(dev_node1, node1, efg_node_size, cudaMemcpyHostToDevice));
 
@@ -315,6 +357,12 @@ int main () {
     free(node12);
     free(node13);
 
+    free(node1_childs);
+
+    free(node2_childs);
+    free(node3_childs);
+    free(node4_childs);
+
     CHECK_ERROR(cudaFree(dev_information_set1));
     CHECK_ERROR(cudaFree(dev_information_set2));
 
@@ -333,6 +381,12 @@ int main () {
     CHECK_ERROR(cudaFree(dev_node11));
     CHECK_ERROR(cudaFree(dev_node12));
     CHECK_ERROR(cudaFree(dev_node13));
+
+    CHECK_ERROR(cudaFree(dev_node1_childs));
+
+    CHECK_ERROR(cudaFree(dev_node1_childs));
+    CHECK_ERROR(cudaFree(dev_node2_childs));
+    CHECK_ERROR(cudaFree(dev_node3_childs));
 
     return 0;
 }
