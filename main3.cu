@@ -62,6 +62,7 @@ typedef struct efg_node_t {
     struct efg_node_t *parent;
 
     int player;
+    float value;
     INFORMATION_SET *information_set;
 
     // children
@@ -73,8 +74,20 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
     int thread_id = blockIdx.x*blockDim.x + threadIdx.x;
 
     if (thread_id < terminal_nodes_cnt) {
-        if (thread_id == 0) {
-            printf("terminal nodes cnt %d, first array element %p\n", terminal_nodes_cnt, terminal_nodes[0]);
+        if (thread_id == 1) {
+            printf("terminal nodes cnt %d, first array element %p\n", terminal_nodes_cnt, terminal_nodes[thread_id]);
+
+            EFGNODE *node = terminal_nodes[thread_id];
+            float value = node->value;
+
+
+            printf("node %p, value %f\n", node, value);
+
+            while (node) {
+                printf("value %f, parent %p\n", value, node->parent);
+
+                node = node->parent;
+            }
         }
     }
 }
@@ -120,6 +133,7 @@ int main () {
     }
     node1->parent = NULL;
     node1->player = 1;
+    node1->value = 0.0;
     node1->information_set = dev_information_set1;
     node1->childs_count = 0;
     node1->childs = NULL;
@@ -135,6 +149,7 @@ int main () {
     }
     node2->parent = dev_node1;
     node2->player = 1;
+    node2->value = 0.0;
     node2->information_set = dev_information_set2;
     node2->childs_count = 0;
     node2->childs = NULL;
@@ -149,6 +164,7 @@ int main () {
     }
     node3->parent = dev_node1;
     node3->player = 1;
+    node3->value = 0.0;
     node3->information_set = dev_information_set2;
     node3->childs_count = 0;
     node3->childs = NULL;
@@ -163,6 +179,7 @@ int main () {
     }
     node4->parent = dev_node1;
     node4->player = 1;
+    node4->value = 0.0;
     node4->information_set = dev_information_set2;
     node4->childs_count = 0;
     node4->childs = NULL;
@@ -176,8 +193,9 @@ int main () {
     if (!node5) {
         printf("Error malloc node5\n"); return 1;
     }
-    node5->parent = dev_node1;
+    node5->parent = dev_node2;
     node5->player = 1;
+    node5->value = 0.0;
     node5->information_set = NULL;
     node5->childs_count = 0;
     node5->childs = NULL;
@@ -189,8 +207,9 @@ int main () {
     if (!node6) {
         printf("Error malloc node6\n"); return 1;
     }
-    node6->parent = NULL;
+    node6->parent = dev_node2;
     node6->player = 1;
+    node6->value = 1.0;
     node6->information_set = NULL;
     node6->childs_count = 0;
     node6->childs = NULL;
@@ -202,8 +221,9 @@ int main () {
     if (!node7) {
         printf("Error malloc node7\n"); return 1;
     }
-    node7->parent = NULL;
+    node7->parent = dev_node2;
     node7->player = 1;
+    node7->value = -1.0;
     node7->information_set = NULL;
     node7->childs_count = 0;
     node7->childs = NULL;
@@ -215,8 +235,9 @@ int main () {
     if (!node8) {
         printf("Error malloc node8\n"); return 1;
     }
-    node8->parent = NULL;
+    node8->parent = dev_node3;
     node8->player = 1;
+    node8->value = -1.0;
     node8->information_set = NULL;
     node8->childs_count = 0;
     node8->childs = NULL;
@@ -228,8 +249,9 @@ int main () {
     if (!node9) {
         printf("Error malloc node9\n"); return 1;
     }
-    node9->parent = NULL;
+    node9->parent = dev_node3;
     node9->player = 1;
+    node9->value = 0.0;
     node9->information_set = NULL;
     node9->childs_count = 0;
     node9->childs = NULL;
@@ -241,8 +263,9 @@ int main () {
     if (!node10) {
         printf("Error malloc node10\n"); return 1;
     }
-    node10->parent = NULL;
+    node10->parent = dev_node3;
     node10->player = 1;
+    node10->value = 1.0;
     node10->information_set = NULL;
     node10->childs_count = 0;
     node10->childs = NULL;
@@ -254,8 +277,9 @@ int main () {
     if (!node11) {
         printf("Error malloc node11\n"); return 1;
     }
-    node11->parent = NULL;
+    node11->parent = dev_node4;
     node11->player = 1;
+    node11->value = 1.0;
     node11->information_set = NULL;
     node11->childs_count = 0;
     node11->childs = NULL;
@@ -267,8 +291,9 @@ int main () {
     if (!node12) {
         printf("Error malloc node12\n"); return 1;
     }
-    node12->parent = NULL;
+    node12->parent = dev_node4;
     node12->player = 1;
+    node12->value = -1.0;
     node12->information_set = NULL;
     node12->childs_count = 0;
     node12->childs = NULL;
@@ -280,8 +305,9 @@ int main () {
     if (!node13) {
         printf("Error malloc node13\n"); return 1;
     }
-    node13->parent = NULL;
+    node13->parent = dev_node4;
     node13->player = 1;
+    node13->value = 0.0;
     node13->information_set = NULL;
     node13->childs_count = 0;
     node13->childs = NULL;
