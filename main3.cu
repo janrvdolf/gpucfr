@@ -69,6 +69,16 @@ typedef struct efg_node_t {
     struct efg_node_t **childs;
 } EFGNODE;
 
+__global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
+    int thread_id = blockIdx.x*blockDim.x + threadIdx.x;
+
+    if (thread_id < terminal_nodes_cnt) {
+        if (thread_id == 0) {
+            printf("terminal nodes cnt %d, first array element %p\n", terminal_nodes_cnt, terminal_nodes[0]);
+        }
+    }
+}
+
 
 int main () {
     /* INFORMATION SETS */
@@ -337,6 +347,29 @@ int main () {
     CHECK_ERROR(cudaMemcpy(dev_node12, node12, efg_node_size, cudaMemcpyHostToDevice));
     CHECK_ERROR(cudaMemcpy(dev_node13, node13, efg_node_size, cudaMemcpyHostToDevice));
 
+    // Prepare a list of terminal nodes
+    int terminal_nodes_size = 9;
+    size_t terminal_nodes_ptr_size = sizeof(EFGNODE**) * terminal_nodes_size;
+    EFGNODE **terminal_nodes = (EFGNODE**) malloc(terminal_nodes_ptr_size);
+    if (!terminal_nodes) {
+        printf("error malloc terminal nodes\n");
+        return 1;
+    }
+    terminal_nodes[0] = dev_node5;
+    terminal_nodes[1] = dev_node6;
+    terminal_nodes[2] = dev_node7;
+    terminal_nodes[3] = dev_node8;
+    terminal_nodes[4] = dev_node9;
+    terminal_nodes[5] = dev_node10;
+    terminal_nodes[6] = dev_node11;
+    terminal_nodes[7] = dev_node12;
+    terminal_nodes[8] = dev_node13;
+    EFGNODE** dev_terminal_nodes = (EFGNODE**) malloc(terminal_nodes_ptr_size);
+    CHECK_ERROR(cudaMalloc((void **) &dev_terminal_nodes, terminal_nodes_ptr_size));
+    CHECK_ERROR(cudaMemcpy(dev_terminal_nodes, terminal_nodes, terminal_nodes_ptr_size, cudaMemcpyHostToDevice));
+
+    cfv_kernel<<<1, 32>>>(dev_terminal_nodes, terminal_nodes_size);
+
     /* FREE MEMORY */
     free(information_set1);
     free(information_set2);
@@ -363,6 +396,8 @@ int main () {
     free(node3_childs);
     free(node4_childs);
 
+    free(terminal_nodes);
+
     CHECK_ERROR(cudaFree(dev_information_set1));
     CHECK_ERROR(cudaFree(dev_information_set2));
 
@@ -385,6 +420,8 @@ int main () {
     CHECK_ERROR(cudaFree(dev_node1_childs));
     CHECK_ERROR(cudaFree(dev_node2_childs));
     CHECK_ERROR(cudaFree(dev_node3_childs));
+
+    CHECK_ERROR(cudaFree(dev_terminal_nodes));
 
     return 0;
 }
