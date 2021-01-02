@@ -78,14 +78,32 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
             printf("terminal nodes cnt %d, first array element %p\n", terminal_nodes_cnt, terminal_nodes[thread_id]);
 
             EFGNODE *node = terminal_nodes[thread_id];
+
+            INFORMATION_SET *information_set = node->information_set;
             float value = node->value;
 
 
             printf("node %p, value %f\n", node, value);
 
+            EFGNODE *from_node = node;
+            node = node->parent; // a terminal node has always a parent node
+
             while (node) {
                 printf("value %f, parent %p\n", value, node->parent);
 
+                // search nodes's index in childs
+                int child_idx = -1;
+                for (int i = 0; i < node->childs_count; i++) {
+                    EFGNODE **childs = node->childs;
+
+                    if (from_node == childs[i]) {
+                        child_idx = i;
+                        break;
+                    }
+                }
+                printf("child's index is %d\n", child_idx);
+
+                from_node = node;
                 node = node->parent;
             }
         }
@@ -95,7 +113,7 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
 
 int main () {
     /* INFORMATION SETS */
-    int number_of_actions = 3;
+    int number_of_actions = 3; // TODO max number of actions
     // player 1
     size_t information_set1_size = 4 * number_of_actions * sizeof(float) + 1;
     INFORMATION_SET *information_set1 = (INFORMATION_SET*) malloc(information_set1_size);
@@ -135,7 +153,7 @@ int main () {
     node1->player = 1;
     node1->value = 0.0;
     node1->information_set = dev_information_set1;
-    node1->childs_count = 0;
+    node1->childs_count = 3;
     node1->childs = NULL;
     EFGNODE *dev_node1 = NULL;
     CHECK_ERROR(cudaMalloc((void **) &dev_node1, efg_node_size));
@@ -151,7 +169,7 @@ int main () {
     node2->player = 1;
     node2->value = 0.0;
     node2->information_set = dev_information_set2;
-    node2->childs_count = 0;
+    node2->childs_count = 3;
     node2->childs = NULL;
     EFGNODE *dev_node2 = NULL;
     CHECK_ERROR(cudaMalloc((void **) &dev_node2, efg_node_size));
@@ -166,7 +184,7 @@ int main () {
     node3->player = 1;
     node3->value = 0.0;
     node3->information_set = dev_information_set2;
-    node3->childs_count = 0;
+    node3->childs_count = 3;
     node3->childs = NULL;
     EFGNODE *dev_node3 = NULL;
     CHECK_ERROR(cudaMalloc((void **) &dev_node3, efg_node_size));
@@ -181,7 +199,7 @@ int main () {
     node4->player = 1;
     node4->value = 0.0;
     node4->information_set = dev_information_set2;
-    node4->childs_count = 0;
+    node4->childs_count = 3;
     node4->childs = NULL;
     EFGNODE *dev_node4 = NULL;
     CHECK_ERROR(cudaMalloc((void **) &dev_node4, efg_node_size));
@@ -325,6 +343,7 @@ int main () {
     CHECK_ERROR(cudaMalloc((void **) &dev_node1_childs, efgnode_childs_size));
     CHECK_ERROR(cudaMemcpy(dev_node1_childs, node1_childs, efgnode_childs_size, cudaMemcpyHostToDevice));
     node1->childs = dev_node1_childs;
+    // TODO update childs_cnt here
     // node2
     efgnode_childs_size = 3 * sizeof(EFGNODE**);
     EFGNODE **node2_childs = (EFGNODE**) malloc(efgnode_childs_size);
