@@ -287,7 +287,7 @@ int main () {
     node1_childs[2] = dev_node4;
     EFGNODE **dev_node1_childs = NULL;
     CHECK_ERROR(cudaMalloc((void **) &dev_node1_childs, efgnode_childs_size));
-    CHECK_ERROR(cudaMemcpy(dev_node1_childs, node1_childs, efg_node_size, cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(dev_node1_childs, node1_childs, efgnode_childs_size, cudaMemcpyHostToDevice));
     node1->childs = dev_node1_childs;
     // node2
     efgnode_childs_size = 3 * sizeof(EFGNODE**);
@@ -297,7 +297,7 @@ int main () {
     node2_childs[2] = dev_node7;
     EFGNODE **dev_node2_childs = NULL;
     CHECK_ERROR(cudaMalloc((void **) &dev_node2_childs, efgnode_childs_size));
-    CHECK_ERROR(cudaMemcpy(dev_node2_childs, node2_childs, efg_node_size, cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(dev_node2_childs, node2_childs, efgnode_childs_size, cudaMemcpyHostToDevice));
     node2->childs = dev_node2_childs;
     // node3
     efgnode_childs_size = 3 * sizeof(EFGNODE**);
@@ -307,7 +307,7 @@ int main () {
     node3_childs[2] = dev_node10;
     EFGNODE **dev_node3_childs = NULL;
     CHECK_ERROR(cudaMalloc((void **) &dev_node3_childs, efgnode_childs_size));
-    CHECK_ERROR(cudaMemcpy(dev_node3_childs, node3_childs, efg_node_size, cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(dev_node3_childs, node3_childs, efgnode_childs_size, cudaMemcpyHostToDevice));
     node3->childs = dev_node3_childs;
     // node4
     efgnode_childs_size = 3 * sizeof(EFGNODE**);
@@ -317,7 +317,7 @@ int main () {
     node4_childs[2] = dev_node13;
     EFGNODE **dev_node4_childs = NULL;
     CHECK_ERROR(cudaMalloc((void **) &dev_node4_childs, efgnode_childs_size));
-    CHECK_ERROR(cudaMemcpy(dev_node4_childs, node4_childs, efg_node_size, cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(dev_node4_childs, node4_childs, efgnode_childs_size, cudaMemcpyHostToDevice));
     node4->childs = dev_node4_childs;
 
     // copy nodes to GPU memory
@@ -381,8 +381,6 @@ int main () {
     CHECK_ERROR(cudaFree(dev_node11));
     CHECK_ERROR(cudaFree(dev_node12));
     CHECK_ERROR(cudaFree(dev_node13));
-
-    CHECK_ERROR(cudaFree(dev_node1_childs));
 
     CHECK_ERROR(cudaFree(dev_node1_childs));
     CHECK_ERROR(cudaFree(dev_node2_childs));
