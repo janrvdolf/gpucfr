@@ -127,8 +127,9 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
 
                 if (child_idx > 0) {
                     // from current strategy get the action probability
-                    INFORMATION_SET *information_set = node->information_set;
+                    INFORMATION_SET *information_set = node->information_set; // tohle bych mohl nacist do shared memory
                     printf("node information set value %f \n", information_set[0]); // zero index is for number of
+                    int number_of_actions = information_set[0];
 
                     int offset = 1; // offset for strategy; // TODO refactor
                     float action_probability = information_set[offset + child_idx];
@@ -136,6 +137,8 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
                     value *= action_probability;
 
                     // atomic add to "information_set->cfv[action]"
+                    offset = 1 + 2*number_of_actions;
+                    atomicAdd(&information_set[offset + child_idx], value); // question if to do after or before previous line
 
                 }
 
