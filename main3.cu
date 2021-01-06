@@ -71,7 +71,7 @@ typedef struct efg_node_t {
 } EFGNODE;
 
 __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
-    int thread_id = blockIdx.x*blockDim.x + threadIdx.x;
+    int thread_id = threadIdx.x;
 
     if (thread_id < terminal_nodes_cnt) {
         if (thread_id == 1) {
@@ -79,9 +79,9 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
 
             EFGNODE *node = terminal_nodes[thread_id];
 
-            INFORMATION_SET *information_set = node->information_set;
             float value = node->value;
 
+            // here is terminal nodes, no information set
 
             printf("node %p, value %f\n", node, value);
 
@@ -101,7 +101,21 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
                         break;
                     }
                 }
-                printf("child's index is %d\n", child_idx);
+                //printf("child's index is %d\n", child_idx);
+
+                // TODO atomicly add to the cfv value in infoset
+
+                if (child_idx > 0) {
+                    // from current strategy get the action probability
+                    INFORMATION_SET *information_set = node->information_set;
+                    printf("node information set value %f \n", information_set[0]); // zero index is for number of
+
+                    int offset = 1; // offset for strategy; // TODO refactor
+                    float action_probability = information_set[offset + child_idx];
+                    // multiply the value
+                    value *= action_probability;
+
+                }
 
                 from_node = node;
                 node = node->parent;
