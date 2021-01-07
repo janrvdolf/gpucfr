@@ -461,6 +461,15 @@ int main () {
     }
     information_sets_lengths[0] = 1;
     information_sets_lengths[1] = 1;
+    // EFG nodes by lengths
+    size_t efg_nodes_lengths_size = 2*sizeof(int);
+    int *efg_nodes_lengths = (int *) malloc(efg_nodes_lengths_size);
+    if (!efg_nodes_lengths) {
+        printf("Error malloc efg_nodes_lengths\n");
+        return 1;
+    }
+    efg_nodes_lengths[0] = 1;
+    efg_nodes_lengths[1] = 3;
 
     // kernel - counterfactual value computation
     cfv_kernel<<<1, 32>>>(dev_terminal_nodes, terminal_nodes_size);
