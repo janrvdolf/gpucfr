@@ -452,6 +452,17 @@ int main () {
     CHECK_ERROR(cudaMalloc((void **) &dev_terminal_nodes, terminal_nodes_ptr_size));
     CHECK_ERROR(cudaMemcpy(dev_terminal_nodes, terminal_nodes, terminal_nodes_ptr_size, cudaMemcpyHostToDevice));
 
+    // information sets lengths by depth
+    size_t information_sets_lengths_size = 2*sizeof(int);
+    int *information_sets_lengths = (int *) malloc(information_sets_lengths_size);
+    if (!information_sets_lengths) {
+        printf("Error malloc information_sets_lengths\n");
+        return 1;
+    }
+    information_sets_lengths[0] = 1;
+    information_sets_lengths[1] = 1;
+
+    // kernel - counterfactual value computation
     cfv_kernel<<<1, 32>>>(dev_terminal_nodes, terminal_nodes_size);
 
     /* FREE MEMORY */
