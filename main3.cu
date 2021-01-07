@@ -461,6 +461,9 @@ int main () {
     }
     information_sets_lengths[0] = 1;
     information_sets_lengths[1] = 1;
+    int *dev_information_sets_lengths_size = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_information_sets_lengths_size, information_sets_lengths_size));
+    CHECK_ERROR(cudaMemcpy(dev_information_sets_lengths_size, information_sets_lengths, information_sets_lengths_size, cudaMemcpyHostToDevice));
     // EFG nodes by lengths
     size_t efg_nodes_lengths_size = 2*sizeof(int);
     int *efg_nodes_lengths = (int *) malloc(efg_nodes_lengths_size);
@@ -470,6 +473,9 @@ int main () {
     }
     efg_nodes_lengths[0] = 1;
     efg_nodes_lengths[1] = 3;
+    int *dev_efg_nodes_lengths_size = NULL;
+    CHECK_ERROR(cudaMalloc((void **) &dev_efg_nodes_lengths_size, efg_nodes_lengths_size));
+    CHECK_ERROR(cudaMemcpy(dev_efg_nodes_lengths_size, efg_nodes_lengths, efg_nodes_lengths_size, cudaMemcpyHostToDevice));
 
     // kernel - counterfactual value computation
     cfv_kernel<<<1, 32>>>(dev_terminal_nodes, terminal_nodes_size);
