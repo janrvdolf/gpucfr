@@ -1,2 +1,10 @@
 TODO:
 reach probabilities - > udrzim si v jakym uzlu jsem, ptom jedu while cyklus do rootu, az se dostanu do rootu, tak updatuju reach probability uzlu.
+
+/*
+ * print node: parent hash, number of actions, player, is_terminal,  terminal value pl 1, information set hash
+ * Udelame mapu - efg node hash -> efg node
+ * Projdu nody od korene k terminalnim symbolum. Vygeneruju informacni mnozimi -> mapu key -> infoset array
+ *
+  Udelat vystup pro strategie a nacitani do gtlibu, pak spustim exploitabilitu.
+ * */
