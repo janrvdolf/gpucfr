@@ -220,6 +220,10 @@ public:
         return dev_information_set_t_;
     }
 
+    size_t get_hash() {
+        return hash_t_;
+    }
+
     std::vector<double> get_current_strategy() {
         std::vector<double> returning_strategy;
         int offset = 1;
@@ -400,7 +404,7 @@ public:
 
         for (auto information_set: information_sets_) {
             std::vector<double> strategy = information_set->get_current_strategy();
-            std::cout << strategy.size() << std::endl;
+            std::cout << information_set->get_hash() << " - size " << strategy.size() << std::endl;
             for (int j = 0; j < strategy.size(); j++) {
                 std::cout << strategy[j] << " ";
             }
