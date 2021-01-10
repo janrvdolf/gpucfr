@@ -189,6 +189,27 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
     }
 }
 
+__global__ void regret_update_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int information_set_size) {
+    unsigned int thread_id = threadIdx.x;
+
+    if (thread_id < information_set_size) {
+        INFORMATION_SET * infoset_data = dev_infoset_data[thread_id];
+        auto number_of_actions = (unsigned int) infoset_data[0];
+        unsigned int offset_current_strategy = 1;
+        unsigned int offset_cfv_values = 1 + 2*number_of_actions;
+        unsigned int offset_regrets = 1 + 3*number_of_actions;
+
+        float expected_utility = 0;
+        for (int i = 0; i < number_of_actions; i++) {
+            expected_utility += infoset_data[i + offset_current_strategy] * infoset_data[i + offset_cfv_values];
+        }
+
+        for (int i = 0; i < number_of_actions; i++) {
+            infoset_data[i + offset_regrets] = infoset_data[i + offset_regrets] + infoset_data[i + offset_cfv_values] - expected_utility;
+        }
+    }
+}
+
 
 class InformationSet {
 private:
@@ -550,7 +571,12 @@ public:
     void run_iteration(int iteration) {
         rm_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size(), iteration);
 
-        cfv_kernel<<<1, 32>>>(dev_terminal_nodes_, 4);
+        // pri vypoctu reach probability ulozit reach probability do infosetu;
+
+        int terminal_nodes_size = game_tree_.at(game_tree_.size() - 1). size();
+        cfv_kernel<<<1, 32>>>(dev_terminal_nodes_, terminal_nodes_size);
+
+        regret_update_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size());
     }
 
     void print_nodes() {
