@@ -175,7 +175,6 @@ private:
     EFGNODE *   dev_node_t_ = NULL;
     EFGNODE **  dev_children_ = NULL;
 
-
     // gtlib data:
     size_t   hash_ = 0;
     unsigned int    number_of_actions_ = 0;
@@ -214,6 +213,7 @@ public:
             } else {
                 node_t_->parent = NULL;
             }
+
             node_t_->player = player_;
             node_t_->reach_probability = 0.0;
             node_t_->value = value_;
@@ -267,6 +267,9 @@ private:
 
     std::vector<InformationSet*> information_sets_;
 
+    EFGNODE **terminal_nodes_ = NULL;
+    EFGNODE **dev_terminal_nodes_ = NULL;
+
 public:
     std::string path_;
     std::vector<std::vector<Node*>> game_tree_;
@@ -286,6 +289,18 @@ public:
                 node->memcpy_host_to_gpu();
             }
         }
+        // terminal nodes
+        int terminal_nodes_size = game_tree_.at(game_tree_.size() - 1).size();
+        size_t terminal_nodes_ptr_size = sizeof(EFGNODE**) * terminal_nodes_size;
+        terminal_nodes_ = (EFGNODE**) malloc(terminal_nodes_ptr_size);
+        int cnt = 0;
+        for (auto node: game_tree_.at(game_tree_.size() - 1)) {
+            terminal_nodes_[cnt++] = node->get_gpu_ptr();
+        }
+        dev_terminal_nodes_ = (EFGNODE**) malloc(terminal_nodes_ptr_size);
+        CHECK_ERROR(cudaMalloc((void **) &dev_terminal_nodes_, terminal_nodes_ptr_size));
+        CHECK_ERROR(cudaMemcpy(dev_terminal_nodes_, terminal_nodes_, terminal_nodes_ptr_size, cudaMemcpyHostToDevice));
+
     }
 
     void memcpy_gpu_to_host () {
@@ -306,6 +321,10 @@ public:
         for (InformationSet *information_set: information_sets_) {
             delete information_set;
         }
+
+        free(terminal_nodes_);
+        CHECK_ERROR(cudaFree(dev_terminal_nodes_));
+
     }
 
     /*
@@ -436,8 +455,6 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
                     }
                 }
                 //printf("child's index is %d\n", child_idx);
-
-                // TODO atomicly add to the cfv value in infoset
 
                 if (child_idx > 0) {
                     // from current strategy get the action probability
