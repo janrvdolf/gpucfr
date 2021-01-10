@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -16,6 +17,29 @@ static void handleCUDAError(
 }
 
 #define CHECK_ERROR( error ) ( handleCUDAError( error, __FILE__, __LINE__ ) )
+
+
+class GameLoader {
+public:
+    std::string path;
+
+    GameLoader(std::string path) {
+        this->path = path;
+    }
+
+    /*
+    output_file << node_hash << std::endl;
+    output_file << node_number_of_actions << std::endl;
+    output_file << node_player << std::endl;
+    output_file << node_parent_hash << std::endl;
+    output_file << information_set_hash << std::endl;
+    */
+
+    void load() {
+
+    }
+
+};
 
 
 typedef float INFORMATION_SET;
