@@ -93,6 +93,38 @@ typedef struct efg_node_t {
     struct efg_node_t **childs;
 } EFGNODE;
 
+__global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int information_set_size, float iteration) {
+    unsigned int thread_id = threadIdx.x;
+
+    if (thread_id == 0 && thread_id < information_set_size) {
+        INFORMATION_SET * infoset_data = dev_infoset_data[thread_id];
+        float number_of_actions_f = infoset_data[0];
+        auto number_of_actions = (unsigned int) infoset_data[0];
+        unsigned int offset_current_strategy = 1;
+        unsigned int offset_average_strategy = 1 + number_of_actions;
+
+        float sum = 0.0;
+        for (int i = 0; i < number_of_actions; i++) {
+            sum += max(infoset_data[i + offset_current_strategy], 0.0f);
+        }
+        // update the current strategy
+        if (sum > 0.0) {
+            for (int i = 0; i < number_of_actions; ++i) {
+                infoset_data[i + offset_current_strategy] = max(infoset_data[i + offset_current_strategy], 0.0f)/sum;
+            }
+
+        } else {
+            for (int i = 0; i < number_of_actions; i++) {
+                infoset_data[i + offset_current_strategy] = 1.0f/number_of_actions_f;
+            }
+        }
+        // update the average strategy ... asi rozdelit
+        for (int i = 0; i < number_of_actions; i++) {
+            // TODO chybi tu reach prob infosetu
+            infoset_data[i + offset_average_strategy] = (iteration-1)/iteration * infoset_data[i + offset_average_strategy] + (1.0/iteration) * infoset_data[i + offset_current_strategy];
+        }
+    }
+}
 
 __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
     int thread_id = threadIdx.x;
@@ -361,6 +393,9 @@ private:
     EFGNODE **terminal_nodes_ = NULL;
     EFGNODE **dev_terminal_nodes_ = NULL;
 
+    INFORMATION_SET **information_sets_t_ = NULL;
+    INFORMATION_SET **dev_informations_sets_ = NULL;
+
 public:
     std::string path_;
     std::vector<std::vector<Node*>> game_tree_;
@@ -391,7 +426,15 @@ public:
         dev_terminal_nodes_ = (EFGNODE**) malloc(terminal_nodes_ptr_size);
         CHECK_ERROR(cudaMalloc((void **) &dev_terminal_nodes_, terminal_nodes_ptr_size));
         CHECK_ERROR(cudaMemcpy(dev_terminal_nodes_, terminal_nodes_, terminal_nodes_ptr_size, cudaMemcpyHostToDevice));
-
+        // information sets array
+        size_t information_sets_size = sizeof(INFORMATION_SET**) * information_sets_.size();
+        information_sets_t_ = (INFORMATION_SET**) malloc(information_sets_size);
+        for (int i = 0; i < information_sets_.size(); i++) {
+            information_sets_t_[i] = information_sets_.at(i)->get_gpu_ptr();
+        }
+        dev_informations_sets_ = (INFORMATION_SET **) malloc(information_sets_size);
+        CHECK_ERROR(cudaMalloc((void **) &dev_informations_sets_, information_sets_size));
+        CHECK_ERROR(cudaMemcpy(dev_informations_sets_, information_sets_t_, information_sets_size, cudaMemcpyHostToDevice));
     }
 
     void memcpy_gpu_to_host () {
@@ -427,6 +470,9 @@ public:
 
         free(terminal_nodes_);
         CHECK_ERROR(cudaFree(dev_terminal_nodes_));
+
+        free(information_sets_t_);
+        CHECK_ERROR(cudaFree(dev_informations_sets_));
 
     }
 
@@ -501,7 +547,9 @@ public:
         input_file.close();
     }
 
-    void run_iteration() {
+    void run_iteration(int iteration) {
+        rm_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size(), iteration);
+
         cfv_kernel<<<1, 32>>>(dev_terminal_nodes_, 4);
     }
 
@@ -538,9 +586,9 @@ int main () {
     game_loader.load();
 //    game_loader.print_nodes();
     game_loader.memcpy_host_to_gpu();
-
-    game_loader.run_iteration();
-
+    for (int i = 1; i < 2; i++) {
+        game_loader.run_iteration(i);
+    }
     game_loader.memcpy_gpu_to_host();
 
 
