@@ -113,28 +113,32 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
             node = node->parent; // a terminal node has always a parent node
 
             while (node) {
-                printf("value %f, parent %p\n", value, node->parent);
+                printf("----\n");
+                printf("value %f, parent %p, childs %d\n", value, node->parent, node->childs_count);
 
                 // search nodes's index in childs
                 int child_idx = -1;
                 for (int i = 0; i < node->childs_count; i++) {
                     EFGNODE **childs = node->childs;
+                    printf("child %p\n", childs[i]);
 
                     if (from_node == childs[i]) {
                         child_idx = i;
                         break;
                     }
                 }
-                //printf("child's index is %d\n", child_idx);
+                printf("child's index is %d\n", child_idx);
+                INFORMATION_SET *information_set = node->information_set; // tohle bych mohl nacist do shared memory
+                int number_of_actions = information_set[0];
 
-                if (child_idx > 0) {
+                if (child_idx > -1) {
                     // from current strategy get the action probability
-                    INFORMATION_SET *information_set = node->information_set; // tohle bych mohl nacist do shared memory
-                    printf("node information set value %f \n", information_set[0]); // zero index is for number of
-                    int number_of_actions = information_set[0];
-
                     int offset = 1; // offset for strategy; // TODO refactor
                     float action_probability = information_set[offset + child_idx];
+
+                    printf("node information set value %f, act prob %f\n", information_set[0], action_probability); // zero index is for number of
+
+
                     // multiply the value
                     value *= action_probability;
 
@@ -147,6 +151,8 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
                 from_node = node;
                 node = node->parent;
             }
+
+            printf("final value %f", value);
         }
     }
 }
@@ -246,6 +252,11 @@ public:
     Node(Node *parent, InformationSet *information_set) {
         parent_ = parent;
         information_set_ = information_set;
+
+        size_t node_t_size = sizeof(EFGNODE);
+        node_t_ = (EFGNODE*) malloc(node_t_size);
+
+        CHECK_ERROR(cudaMalloc((void **) &dev_node_t_, node_t_size));
     }
 
     ~Node() {
@@ -262,9 +273,9 @@ public:
     }
 
     void memcpy_host_to_gpu () {
-        if (node_t_ == NULL && dev_node_t_ == NULL && dev_children_ == NULL) {
+//        if (node_t_ == NULL && dev_node_t_ == NULL && dev_children_ == NULL) {
             size_t node_t_size = sizeof(EFGNODE);
-            node_t_ = (EFGNODE*) malloc(node_t_size);
+//            node_t_ = (EFGNODE*) malloc(node_t_size);
 
             if (parent_) {
                 node_t_->parent = parent_->get_gpu_ptr();
@@ -282,7 +293,7 @@ public:
             }
             node_t_->childs_count = children.size();
             // node's children
-            size_t node_children_size = number_of_actions_ * sizeof(EFGNODE**);
+            size_t node_children_size = node_t_->childs_count * sizeof(EFGNODE**);
             EFGNODE **node_children = (EFGNODE**) malloc(node_children_size);
             for (int i = 0; i < children.size(); i++) {
                 node_children[i] = children[i]->get_gpu_ptr();
@@ -291,9 +302,9 @@ public:
             CHECK_ERROR(cudaMemcpy(dev_children_, node_children, node_children_size, cudaMemcpyHostToDevice));
             node_t_->childs = dev_children_;
             // node to GPU
-            CHECK_ERROR(cudaMalloc((void **) &dev_node_t_, node_t_size));
+//            CHECK_ERROR(cudaMalloc((void **) &dev_node_t_, node_t_size));
             CHECK_ERROR(cudaMemcpy(dev_node_t_, node_t_, node_t_size, cudaMemcpyHostToDevice));
-        }
+//        }
     }
 
     void update_gtlib_data(
