@@ -96,13 +96,69 @@ typedef struct efg_node_t {
 
 class InformationSet {
 private:
+    size_t hash_t_ = 0;
     unsigned int number_of_actions_ = 0;
-public:
-    InformationSet(unsigned number_of_actions) {
-        number_of_actions_ = number_of_actions;
+
+    size_t information_set_t_size_ = 0;
+    INFORMATION_SET* information_set_t_ = NULL;
+
+    INFORMATION_SET* dev_information_set_t_ = NULL;
+
+    void init_(){
+        // init the number of actions
+        information_set_t_[0] = number_of_actions_;
+        unsigned int offset = 1;
+        // init current_strategy
+        for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
+            information_set_t_[i] = 1./number_of_actions_;
+        }
+        offset += number_of_actions_;
+        // init average strategy
+        for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
+            information_set_t_[i] = 0; // TODO check if this should also have uniform strategy
+        }
+        offset += number_of_actions_;
+        // init counterfactual values
+        for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
+            information_set_t_[i] = 0;
+        }
+        offset += number_of_actions_;
+        // init regrets
+        for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
+            information_set_t_[i] = 0;
+        }
     }
 
-    ~InformationSet() {}
+public:
+    InformationSet(size_t hash, unsigned number_of_actions) {
+        hash_t_ = hash;
+        number_of_actions_ = number_of_actions;
+
+        information_set_t_size_ = (4 * number_of_actions_ + 1) * sizeof(INFORMATION_SET);
+        information_set_t_ = (INFORMATION_SET*) malloc(information_set_t_size_);
+
+        init_();
+
+        CHECK_ERROR(cudaMalloc((void **) &dev_information_set_t_, information_set_t_size_));
+    }
+
+    void memcpy_host_to_gpu () {
+        // copy data from CPU's RAM to GPU's global memory
+        CHECK_ERROR(cudaMemcpy(dev_information_set_t_, information_set_t_, information_set_t_size_, cudaMemcpyHostToDevice));
+    }
+
+    void memcpy_gpu_to_host () {
+        // copy data from GPU's global memory to CPU's RAM
+        CHECK_ERROR(cudaMemcpy(information_set_t_, dev_information_set_t_, information_set_t_size_, cudaMemcpyDeviceToHost));
+    }
+
+    ~InformationSet() {
+        free(information_set_t_);
+        information_set_t_ = NULL;
+
+        CHECK_ERROR(cudaFree(dev_information_set_t_));
+        dev_information_set_t_ = NULL;
+    }
 };
 
 
@@ -129,6 +185,13 @@ public:
 
     ~Node() {
         // delete
+    }
+
+    void memcpy_host_to_gpu () {
+
+    }
+
+    void memcpy_gpu_to_host () {
     }
 
     void update_gtlib_data(
@@ -166,6 +229,12 @@ public:
 
     GameLoader(std::string path) {
         path_ = path;
+    }
+
+    void memcpy_host_to_gpu () {
+    }
+
+    void memcpy_gpu_to_host () {
     }
 
     ~GameLoader() {
@@ -223,7 +292,7 @@ public:
                 if (result_is != is_hash2is_ptr_.end()) {
                     is = result_is->second;
                 } else {
-                    is = new InformationSet(node_number_of_actions);
+                    is = new InformationSet(information_set_hash, node_number_of_actions);
 
                     is_hash2is_ptr_.emplace(std::make_pair(information_set_hash, is));
 
