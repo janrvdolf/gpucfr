@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 #include <fstream>
 
 #include "cuda_runtime.h"
@@ -19,6 +20,43 @@ static void handleCUDAError(
 #define CHECK_ERROR( error ) ( handleCUDAError( error, __FILE__, __LINE__ ) )
 
 
+class Node {
+private:
+    unsigned long   hash_ = 0;
+    unsigned int    number_of_actions_ = 0;
+    unsigned int    player_ = 0;
+    unsigned long   parent_hash_ = 0;
+    unsigned long   information_set_hash_ = 0;
+public:
+    Node() {
+
+    }
+
+    ~Node() {
+        // delete
+    }
+
+    void init_from_gtlib(
+            unsigned long   hash,
+            unsigned int    number_of_actions,
+            unsigned int    player,
+            unsigned long   parent_hash,
+            unsigned long   information_set_hash) {
+        hash_ = hash;
+        number_of_actions_ = number_of_actions;
+        player_ = player;
+        parent_hash_ = parent_hash;
+        information_set_hash_ = information_set_hash;
+    }
+
+};
+
+class InformationSet {
+public:
+    InformationSet() {
+    }
+};
+
 class GameLoader {
 public:
     std::string path;
@@ -36,7 +74,33 @@ public:
     */
 
     void load() {
+        unsigned int max_depth = 0;
 
+        std::vector<std::vector<Node>> game_tree;
+
+        std::ifstream input_file(path);
+        input_file >> max_depth;
+        // loop through depths
+        for (int i = 0; i < max_depth; i++) {
+            unsigned int nodes_cnt = 0;
+            input_file >> nodes_cnt;
+            for (int j = 0; j < nodes_cnt; j++) {
+                unsigned long node_hash = 0;
+                unsigned int node_number_of_actions = 0;
+                unsigned int node_player = 0;
+                unsigned long node_parent_hash = 0;
+                unsigned long information_set_hash = 0;
+
+                input_file >> node_hash;
+                input_file >> node_number_of_actions;
+                input_file >> node_player;
+                input_file >> node_parent_hash;
+                input_file >> information_set_hash;
+
+
+            }
+        }
+        input_file.close();
     }
 
 };
@@ -175,6 +239,9 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
 
 
 int main () {
+    GameLoader game_loader = GameLoader("/home/ruda/CLionProjects/gpucfr/output.game");
+    game_loader.load();
+
     /* INFORMATION SETS */
     int number_of_actions = 3; // TODO max number of actions
     // player 1
