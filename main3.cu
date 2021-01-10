@@ -84,6 +84,7 @@ typedef struct efg_node_t {
     struct efg_node_t *parent;
 
     int player;
+    // TODO add reach probability
     float value;
     INFORMATION_SET *information_set; // TODO player should be probably in in INFORMATION_SET
 
@@ -93,29 +94,49 @@ typedef struct efg_node_t {
 } EFGNODE;
 
 
+class InformationSet {
+private:
+    unsigned int number_of_actions_ = 0;
+public:
+    InformationSet(unsigned number_of_actions) {
+        number_of_actions_ = number_of_actions;
+    }
+
+    ~InformationSet() {}
+};
+
+
 class Node {
 private:
-    unsigned long   hash_ = 0;
+    Node *parent_ = nullptr;
+    InformationSet *information_set_ = nullptr;
+
+
+    // gtlib data:
+    size_t   hash_ = 0;
     unsigned int    number_of_actions_ = 0;
     unsigned int    player_ = 0;
-    unsigned long   parent_hash_ = 0;
-    unsigned long   information_set_hash_ = 0;
+    size_t   parent_hash_ = 0;
+    size_t   information_set_hash_ = 0;
     float           value_ = 0.0;
 public:
-    Node() {
+    std::vector<Node*> children;
 
+    Node(Node *parent, InformationSet *information_set) {
+        parent_ = parent;
+        information_set_ = information_set;
     }
 
     ~Node() {
         // delete
     }
 
-    void init_from_gtlib(
-            unsigned long   hash,
+    void update_gtlib_data(
+            size_t   hash,
             unsigned int    number_of_actions,
             unsigned int    player,
-            unsigned long   parent_hash,
-            unsigned long   information_set_hash,
+            size_t   parent_hash,
+            size_t   information_set_hash,
             float           value) {
         hash_ = hash;
         number_of_actions_ = number_of_actions;
@@ -125,17 +146,20 @@ public:
         value_ = value;
     }
 
-};
-
-
-class InformationSet {
-public:
-    InformationSet() {
+    void add_child(Node *child) {
+        children.push_back(child);
     }
+
 };
 
 
 class GameLoader {
+private:
+    std::unordered_map<size_t, Node*> node_hash2node_ptr_;
+    std::unordered_map<size_t, InformationSet*> is_hash2is_ptr_;
+
+    std::vector<InformationSet*> information_sets_;
+
 public:
     std::string path_;
     std::vector<std::vector<Node*>> game_tree_;
@@ -146,10 +170,14 @@ public:
 
     ~GameLoader() {
         // free nodes
-        for (auto nodes_vec: game_tree_) {
+        for (const auto &nodes_vec: game_tree_) {
             for (auto node: nodes_vec) {
                 delete node;
             }
+        }
+        // free information sets
+        for (InformationSet *information_set: information_sets_) {
+            delete information_set;
         }
     }
 
@@ -172,11 +200,11 @@ public:
             std::vector<Node*> tmp_nodes_vec;
             input_file >> nodes_cnt;
             for (int j = 0; j < nodes_cnt; j++) {
-                unsigned long node_hash = 0;
+                size_t node_hash = 0;
                 unsigned int node_number_of_actions = 0;
                 unsigned int node_player = 0;
-                unsigned long node_parent_hash = 0;
-                unsigned long information_set_hash = 0;
+                size_t node_parent_hash = 0;
+                size_t information_set_hash = 0; // TODO load "value"
 
                 input_file >> node_hash;
                 input_file >> node_number_of_actions;
@@ -184,8 +212,32 @@ public:
                 input_file >> node_parent_hash;
                 input_file >> information_set_hash;
 
-                Node *node = new Node();
-                node->init_from_gtlib(node_hash, node_number_of_actions, node_player, node_parent_hash, information_set_hash, 0.0);
+                Node *node_parent = nullptr;
+                auto result_node_parent = node_hash2node_ptr_.find(node_parent_hash);
+                if (result_node_parent != node_hash2node_ptr_.end()) {
+                    node_parent = result_node_parent->second;
+                }
+
+                InformationSet *is = nullptr;
+                auto result_is = is_hash2is_ptr_.find(information_set_hash);
+                if (result_is != is_hash2is_ptr_.end()) {
+                    is = result_is->second;
+                } else {
+                    is = new InformationSet(node_number_of_actions);
+
+                    is_hash2is_ptr_.emplace(std::make_pair(information_set_hash, is));
+
+                    information_sets_.push_back(is);
+                }
+
+                Node *node = new Node(node_parent, is);
+                node->update_gtlib_data(node_hash, node_number_of_actions, node_player, node_parent_hash, information_set_hash, 0.0);
+
+                node_hash2node_ptr_.emplace(std::make_pair(node_hash, node));
+
+                if (node_parent) {
+                    node_parent->add_child(node);
+                }
 
                 tmp_nodes_vec.push_back(node);
             }
@@ -196,9 +248,15 @@ public:
 
     void print_nodes() {
         // free nodes
-        for (auto nodes_vec: game_tree_) {
-            for (auto node: nodes_vec) {
-                std::cout << "X ";
+        int cnt = 0;
+        for (const auto &nodes_vec: game_tree_) {
+            std::cout << "Depth " << ++cnt << std::endl;
+            for (Node *node: nodes_vec) {
+                std::cout << "->\t Node " << node << std::endl;
+                std::cout << "\tChilds:" << std::endl;
+                for (Node *child: node->children) {
+                    std::cout << child << std::endl;
+                }
             }
             std::cout << std::endl;
         }
