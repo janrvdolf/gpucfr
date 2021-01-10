@@ -152,6 +152,10 @@ public:
         CHECK_ERROR(cudaMemcpy(information_set_t_, dev_information_set_t_, information_set_t_size_, cudaMemcpyDeviceToHost));
     }
 
+    INFORMATION_SET* get_gpu_ptr() {
+        return dev_information_set_t_;
+    }
+
     ~InformationSet() {
         free(information_set_t_);
         information_set_t_ = NULL;
@@ -166,6 +170,10 @@ class Node {
 private:
     Node *parent_ = nullptr;
     InformationSet *information_set_ = nullptr;
+
+    EFGNODE *   node_t_     = NULL;
+    EFGNODE *   dev_node_t_ = NULL;
+    EFGNODE **  dev_children_ = NULL;
 
 
     // gtlib data:
@@ -184,14 +192,45 @@ public:
     }
 
     ~Node() {
-        // delete
+        if (node_t_)
+            free(node_t_);
+        if (dev_node_t_)
+            CHECK_ERROR(cudaFree(dev_node_t_));
+        if (dev_children_)
+            CHECK_ERROR(cudaFree(dev_children_));
+    }
+
+    EFGNODE* get_gpu_ptr() {
+        return dev_node_t_;
     }
 
     void memcpy_host_to_gpu () {
+        if (node_t_ == NULL && dev_node_t_ == NULL && dev_children_ == NULL) {
+            size_t node_t_size = sizeof(EFGNODE);
+            node_t_ = (EFGNODE*) malloc(node_t_size);
 
-    }
-
-    void memcpy_gpu_to_host () {
+            if (parent_) {
+                node_t_->parent = parent_->get_gpu_ptr();
+            } else {
+                node_t_->parent = NULL;
+            }
+            node_t_->player = player_;
+            node_t_->value = value_;
+            node_t_->information_set = information_set_->get_gpu_ptr();
+            node_t_->childs_count = children.size();
+            // node's children
+            size_t node_children_size = number_of_actions_ * sizeof(EFGNODE**);
+            EFGNODE **node_children = (EFGNODE**) malloc(node_children_size);
+            for (int i = 0; i < children.size(); i++) {
+                node_children[i] = children[i]->get_gpu_ptr();
+            }
+            CHECK_ERROR(cudaMalloc((void **) &dev_children_, node_children_size));
+            CHECK_ERROR(cudaMemcpy(dev_children_, node_children, node_children_size, cudaMemcpyHostToDevice));
+            node_t_->childs = dev_children_;
+            // node to GPU
+            CHECK_ERROR(cudaMalloc((void **) &dev_node_t_, node_t_size));
+            CHECK_ERROR(cudaMemcpy(dev_node_t_, node_t_, node_t_size, cudaMemcpyHostToDevice));
+        }
     }
 
     void update_gtlib_data(
@@ -231,20 +270,24 @@ public:
         path_ = path;
     }
 
-    void memcpy_host_to_gpu () {
+    void memcpy_host_to_gpu() {
         // information sets
         for (auto information_set: information_sets_) {
             information_set->memcpy_host_to_gpu();
         }
         // nodes
+        for (const auto &nodes_vec: game_tree_) {
+            for (auto node: nodes_vec) {
+                node->memcpy_host_to_gpu();
+            }
+        }
     }
 
     void memcpy_gpu_to_host () {
-        // information sets
+        // just information sets, because I need average strategy
         for (auto information_set: information_sets_) {
             information_set->memcpy_gpu_to_host();
         }
-        // nodes
     }
 
     ~GameLoader() {
