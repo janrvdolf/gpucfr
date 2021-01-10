@@ -220,6 +220,24 @@ public:
         return dev_information_set_t_;
     }
 
+    std::vector<double> get_current_strategy() {
+        std::vector<double> returning_strategy;
+        int offset = 1;
+        for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
+            returning_strategy.push_back(information_set_t_[i]);
+        }
+        return returning_strategy;
+    }
+
+    std::vector<double> get_average_strategy() {
+        std::vector<double> returning_strategy;
+        unsigned int offset = 1 + number_of_actions_;
+        for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
+            returning_strategy.push_back(information_set_t_[i]);
+        }
+        return returning_strategy;
+    }
+
     ~InformationSet() {
         free(information_set_t_);
         information_set_t_ = NULL;
@@ -377,6 +395,18 @@ public:
         for (auto information_set: information_sets_) {
             information_set->memcpy_gpu_to_host();
         }
+
+        std::cout << std::endl; // TODO remove
+
+        for (auto information_set: information_sets_) {
+            std::vector<double> strategy = information_set->get_current_strategy();
+            std::cout << strategy.size() << std::endl;
+            for (int j = 0; j < strategy.size(); j++) {
+                std::cout << strategy[j] << " ";
+            }
+            std::cout << std::endl;
+        }
+
     }
 
     ~GameLoader() {
@@ -506,6 +536,9 @@ int main () {
     game_loader.memcpy_host_to_gpu();
 
     game_loader.run_iteration();
+
+    game_loader.memcpy_gpu_to_host();
+
 
     /*
      * Rock-Paper-Scissors
