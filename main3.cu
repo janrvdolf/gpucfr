@@ -94,6 +94,64 @@ typedef struct efg_node_t {
 } EFGNODE;
 
 
+__global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
+    int thread_id = threadIdx.x;
+
+    if (thread_id < terminal_nodes_cnt) {
+        if (thread_id == 1) {
+            printf("terminal nodes cnt %d, first array element %p\n", terminal_nodes_cnt, terminal_nodes[thread_id]);
+
+            EFGNODE *node = terminal_nodes[thread_id];
+
+            float value = node->value;
+
+            // here is terminal nodes, no information set
+
+            printf("node %p, value %f\n", node, value);
+
+            EFGNODE *from_node = node;
+            node = node->parent; // a terminal node has always a parent node
+
+            while (node) {
+                printf("value %f, parent %p\n", value, node->parent);
+
+                // search nodes's index in childs
+                int child_idx = -1;
+                for (int i = 0; i < node->childs_count; i++) {
+                    EFGNODE **childs = node->childs;
+
+                    if (from_node == childs[i]) {
+                        child_idx = i;
+                        break;
+                    }
+                }
+                //printf("child's index is %d\n", child_idx);
+
+                if (child_idx > 0) {
+                    // from current strategy get the action probability
+                    INFORMATION_SET *information_set = node->information_set; // tohle bych mohl nacist do shared memory
+                    printf("node information set value %f \n", information_set[0]); // zero index is for number of
+                    int number_of_actions = information_set[0];
+
+                    int offset = 1; // offset for strategy; // TODO refactor
+                    float action_probability = information_set[offset + child_idx];
+                    // multiply the value
+                    value *= action_probability;
+
+                    // atomic add to "information_set->cfv[action]"
+                    offset = 1 + 2*number_of_actions;
+                    atomicAdd(&information_set[offset + child_idx], value); // question if to do after or before previous line
+
+                }
+
+                from_node = node;
+                node = node->parent;
+            }
+        }
+    }
+}
+
+
 class InformationSet {
 private:
     size_t hash_t_ = 0;
@@ -398,6 +456,10 @@ public:
         input_file.close();
     }
 
+    void run_iteration() {
+        cfv_kernel<<<1, 32>>>(dev_terminal_nodes_, 4);
+    }
+
     void print_nodes() {
         // free nodes
         int cnt = 0;
@@ -423,70 +485,16 @@ public:
 
 
 
-__global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
-    int thread_id = threadIdx.x;
 
-    if (thread_id < terminal_nodes_cnt) {
-        if (thread_id == 1) {
-            printf("terminal nodes cnt %d, first array element %p\n", terminal_nodes_cnt, terminal_nodes[thread_id]);
-
-            EFGNODE *node = terminal_nodes[thread_id];
-
-            float value = node->value;
-
-            // here is terminal nodes, no information set
-
-            printf("node %p, value %f\n", node, value);
-
-            EFGNODE *from_node = node;
-            node = node->parent; // a terminal node has always a parent node
-
-            while (node) {
-                printf("value %f, parent %p\n", value, node->parent);
-
-                // search nodes's index in childs
-                int child_idx = -1;
-                for (int i = 0; i < node->childs_count; i++) {
-                    EFGNODE **childs = node->childs;
-
-                    if (from_node == childs[i]) {
-                        child_idx = i;
-                        break;
-                    }
-                }
-                //printf("child's index is %d\n", child_idx);
-
-                if (child_idx > 0) {
-                    // from current strategy get the action probability
-                    INFORMATION_SET *information_set = node->information_set; // tohle bych mohl nacist do shared memory
-                    printf("node information set value %f \n", information_set[0]); // zero index is for number of
-                    int number_of_actions = information_set[0];
-
-                    int offset = 1; // offset for strategy; // TODO refactor
-                    float action_probability = information_set[offset + child_idx];
-                    // multiply the value
-                    value *= action_probability;
-
-                    // atomic add to "information_set->cfv[action]"
-                    offset = 1 + 2*number_of_actions;
-                    atomicAdd(&information_set[offset + child_idx], value); // question if to do after or before previous line
-
-                }
-
-                from_node = node;
-                node = node->parent;
-            }
-        }
-    }
-}
 
 
 int main () {
     GameLoader game_loader = GameLoader("/home/ruda/CLionProjects/gpucfr/output.game");
     game_loader.load();
-    game_loader.print_nodes();
-
+//    game_loader.print_nodes();
     game_loader.memcpy_host_to_gpu();
+
+    game_loader.run_iteration();
 
     /*
      * Rock-Paper-Scissors
