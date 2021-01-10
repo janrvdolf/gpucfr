@@ -27,6 +27,7 @@ private:
     unsigned int    player_ = 0;
     unsigned long   parent_hash_ = 0;
     unsigned long   information_set_hash_ = 0;
+    float           value_ = 0.0;
 public:
     Node() {
 
@@ -41,12 +42,14 @@ public:
             unsigned int    number_of_actions,
             unsigned int    player,
             unsigned long   parent_hash,
-            unsigned long   information_set_hash) {
+            unsigned long   information_set_hash,
+            float           value) {
         hash_ = hash;
         number_of_actions_ = number_of_actions;
         player_ = player;
         parent_hash_ = parent_hash;
         information_set_hash_ = information_set_hash;
+        value_ = value;
     }
 
 };
@@ -59,10 +62,20 @@ public:
 
 class GameLoader {
 public:
-    std::string path;
+    std::string path_;
+    std::vector<std::vector<Node*>> game_tree_;
 
     GameLoader(std::string path) {
-        this->path = path;
+        path_ = path;
+    }
+
+    ~GameLoader() {
+        // free nodes
+        for (auto nodes_vec: game_tree_) {
+            for (auto node: nodes_vec) {
+                delete node;
+            }
+        }
     }
 
     /*
@@ -76,13 +89,12 @@ public:
     void load() {
         unsigned int max_depth = 0;
 
-        std::vector<std::vector<Node>> game_tree;
-
-        std::ifstream input_file(path);
+        std::ifstream input_file(path_);
         input_file >> max_depth;
         // loop through depths
         for (int i = 0; i < max_depth; i++) {
             unsigned int nodes_cnt = 0;
+            std::vector<Node*> tmp_nodes_vec;
             input_file >> nodes_cnt;
             for (int j = 0; j < nodes_cnt; j++) {
                 unsigned long node_hash = 0;
@@ -97,10 +109,28 @@ public:
                 input_file >> node_parent_hash;
                 input_file >> information_set_hash;
 
+                Node *node = new Node();
+                node->init_from_gtlib(node_hash, node_number_of_actions, node_player, node_parent_hash, information_set_hash, 0.0);
 
+                tmp_nodes_vec.push_back(node);
             }
+            game_tree_.push_back(tmp_nodes_vec);
         }
         input_file.close();
+    }
+
+    void print_nodes() {
+        // free nodes
+        for (auto nodes_vec: game_tree_) {
+            for (auto node: nodes_vec) {
+                std::cout << "X ";
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    bool export_strategy (std::string out_path) { // TODO output strategy from information sets hash -> float values
+        return true;
     }
 
 };
@@ -241,6 +271,11 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
 int main () {
     GameLoader game_loader = GameLoader("/home/ruda/CLionProjects/gpucfr/output.game");
     game_loader.load();
+    game_loader.print_nodes();
+
+    /*
+     * Rock-Paper-Scissors
+     * */
 
     /* INFORMATION SETS */
     int number_of_actions = 3; // TODO max number of actions
