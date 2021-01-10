@@ -232,9 +232,19 @@ public:
     }
 
     void memcpy_host_to_gpu () {
+        // information sets
+        for (auto information_set: information_sets_) {
+            information_set->memcpy_host_to_gpu();
+        }
+        // nodes
     }
 
     void memcpy_gpu_to_host () {
+        // information sets
+        for (auto information_set: information_sets_) {
+            information_set->memcpy_gpu_to_host();
+        }
+        // nodes
     }
 
     ~GameLoader() {
@@ -404,6 +414,8 @@ int main () {
     GameLoader game_loader = GameLoader("/home/ruda/CLionProjects/gpucfr/output.game");
     game_loader.load();
     game_loader.print_nodes();
+
+    game_loader.memcpy_host_to_gpu();
 
     /*
      * Rock-Paper-Scissors
