@@ -35,15 +35,14 @@ typedef struct efg_node_t {
     struct efg_node_t **childs;
 } EFGNODE;
 
-__global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int information_set_size, float iteration) {
+__global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int information_set_size) {
     unsigned int thread_id = threadIdx.x;
 
     if (/*thread_id == 0 &&*/ thread_id < information_set_size) {
         INFORMATION_SET * infoset_data = dev_infoset_data[thread_id];
         float number_of_actions_f = infoset_data[0];
         auto number_of_actions = (unsigned int) infoset_data[0];
-        unsigned int offset_current_strategy = 1;
-        unsigned int offset_average_strategy = 1 + number_of_actions;
+        unsigned int offset_current_strategy = 2;
 
         float sum = 0.0;
         for (int i = 0; i < number_of_actions; i++) {
@@ -60,10 +59,26 @@ __global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int info
                 infoset_data[i + offset_current_strategy] = 1.0f/number_of_actions_f;
             }
         }
-        // update the average strategy ... asi rozdelit
+    }
+}
+
+__global__ void average_strategy_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int information_set_size, float iteration) {
+    unsigned int thread_id = threadIdx.x;
+
+    if (thread_id == 0 && thread_id < information_set_size) {
+        INFORMATION_SET * infoset_data = dev_infoset_data[thread_id];
+
+        auto number_of_actions = (unsigned int) infoset_data[0];
+        unsigned int offset_current_strategy = 2;
+        unsigned int offset_average_strategy = 2 + number_of_actions;
+
+        float reach_probability = infoset_data[1];
+
+        printf("Average strategy kernel:\n");
+        printf("Reach probability %f\n", reach_probability);
+
         for (int i = 0; i < number_of_actions; i++) {
-            // TODO chybi tu reach prob infosetu
-            infoset_data[i + offset_average_strategy] = (iteration-1)/iteration * infoset_data[i + offset_average_strategy] + (1.0/iteration) * infoset_data[i + offset_current_strategy];
+            infoset_data[i + offset_average_strategy] = (iteration-1)/iteration * infoset_data[i + offset_average_strategy] + (1.0/iteration) * reach_probability * infoset_data[i + offset_current_strategy];
         }
     }
 }
@@ -71,7 +86,7 @@ __global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int info
 __global__ void rp_kernel(EFGNODE ** nodes, unsigned int nodes_size) {
     int thread_id = threadIdx.x;
 
-    if (thread_id == 5 && thread_id < nodes_size) {
+    if (thread_id == 0 && thread_id < nodes_size) {
         //printf("Computing reach probability:\n");
         EFGNODE* node = nodes[thread_id];
         INFORMATION_SET *information_set = node->information_set;
@@ -97,7 +112,7 @@ __global__ void rp_kernel(EFGNODE ** nodes, unsigned int nodes_size) {
                 if (child_idx > -1) {
                     INFORMATION_SET *tmp_information_set = tmp->information_set;
                     // get from the 'tmp' node's current strategy the action probability
-                    reach_probability *= tmp_information_set[1+child_idx];
+                    reach_probability *= tmp_information_set[2+child_idx];
                 }
             }
             //printf("value %f, parent %p\n", tmp->value, tmp->parent);
@@ -107,7 +122,7 @@ __global__ void rp_kernel(EFGNODE ** nodes, unsigned int nodes_size) {
         //printf("Reach probability is %f\n", reach_probability);
         node->reach_probability = reach_probability;
         // updates the information set's reach probability
-        information_set[2] = reach_probability;
+        information_set[1] = reach_probability;
     }
 }
 
@@ -180,9 +195,9 @@ __global__ void regret_update_kernel(INFORMATION_SET ** dev_infoset_data, unsign
     if (thread_id < information_set_size) {
         INFORMATION_SET * infoset_data = dev_infoset_data[thread_id];
         auto number_of_actions = (unsigned int) infoset_data[0];
-        unsigned int offset_current_strategy = 1;
-        unsigned int offset_cfv_values = 1 + 2*number_of_actions;
-        unsigned int offset_regrets = 1 + 3*number_of_actions;
+        unsigned int offset_current_strategy = 2;
+        unsigned int offset_cfv_values = 2 + 2*number_of_actions;
+        unsigned int offset_regrets = 2 + 3*number_of_actions;
 
         float expected_utility = 0;
         for (int i = 0; i < number_of_actions; i++) {
@@ -209,7 +224,8 @@ private:
     void init_(){
         // init the number of actions
         information_set_t_[0] = number_of_actions_;
-        unsigned int offset = 1;
+        information_set_t_[1] = 0.0; // infoset reach probability
+        unsigned int offset = 2;
         // init current_strategy
         for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
             //information_set_t_[i] = 1./number_of_actions_;
@@ -237,7 +253,7 @@ public:
         hash_t_ = hash;
         number_of_actions_ = number_of_actions;
 
-        information_set_t_size_ = (4 * number_of_actions_ + 1) * sizeof(INFORMATION_SET);
+        information_set_t_size_ = (4 * number_of_actions_ + 2) * sizeof(INFORMATION_SET);
         information_set_t_ = (INFORMATION_SET*) malloc(information_set_t_size_);
 
         init_();
@@ -265,7 +281,7 @@ public:
 
     std::vector<double> get_current_strategy() {
         std::vector<double> returning_strategy;
-        int offset = 1;
+        int offset = 2;
         for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
             returning_strategy.push_back(information_set_t_[i]);
         }
@@ -274,7 +290,7 @@ public:
 
     std::vector<double> get_average_strategy() {
         std::vector<double> returning_strategy;
-        unsigned int offset = 1 + number_of_actions_;
+        unsigned int offset = 2 + number_of_actions_;
         for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
             returning_strategy.push_back(information_set_t_[i]);
         }
@@ -577,11 +593,15 @@ public:
 
     void run_iteration(int iteration) {
         // Regret matching
-        rm_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size(), iteration);
+        rm_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size());
 
         cudaDeviceSynchronize();
         // Reach probabilities
         rp_kernel<<<1, 32>>>(dev_nodes_, nodes_size_ - terminal_nodes_size_); // TODO maybe I should run it on all nodes
+
+        cudaDeviceSynchronize();
+
+        average_strategy_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size(), iteration);
         // Counterfactual values
 //        cfv_kernel<<<1, 32>>>(dev_terminal_nodes_, terminal_nodes_size_);
         // Regrets
