@@ -156,7 +156,7 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, unsigned int terminal_node
 
                 offset = 2 + 2 * number_of_actions; // offset for counterfactual values
 
-                float player_sigh = 1.0;
+                float player_sigh = 1.0; // terminal values are stores for player one, so for player two multiply with -1
                 if (node->player == 2) {
                     player_sigh = -1.0;
                 }
@@ -209,7 +209,6 @@ private:
         unsigned int offset = 2;
         // init current_strategy
         for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
-            //information_set_t_[i] = 1./number_of_actions_;
             information_set_t_[i] = 0;
         }
         offset += number_of_actions_;
@@ -426,6 +425,8 @@ private:
     EFGNODE **nodes_ = NULL;
     EFGNODE **dev_nodes_ = NULL;
 
+    float elapsed_time_ = 0.0;
+
     unsigned int compute_blocks_number(int size) {
         unsigned int padded = std::ceil((float)size/THREADS_PER_BLOCK)*THREADS_PER_BLOCK;
         return padded/THREADS_PER_BLOCK;
@@ -458,7 +459,6 @@ public:
         for (auto node: game_tree_.at(game_tree_.size() - 1)) {
             terminal_nodes_[cnt++] = node->get_gpu_ptr();
         }
-        dev_terminal_nodes_ = (EFGNODE**) malloc(terminal_nodes_ptr_size);
         CHECK_ERROR(cudaMalloc((void **) &dev_terminal_nodes_, terminal_nodes_ptr_size));
         CHECK_ERROR(cudaMemcpy(dev_terminal_nodes_, terminal_nodes_, terminal_nodes_ptr_size, cudaMemcpyHostToDevice));
         // information sets array
@@ -467,7 +467,6 @@ public:
         for (int i = 0; i < information_sets_.size(); i++) {
             information_sets_t_[i] = information_sets_.at(i)->get_gpu_ptr();
         }
-        dev_informations_sets_ = (INFORMATION_SET **) malloc(information_sets_size); // TODO review looks wrong
         CHECK_ERROR(cudaMalloc((void **) &dev_informations_sets_, information_sets_size));
         CHECK_ERROR(cudaMemcpy(dev_informations_sets_, information_sets_t_, information_sets_size, cudaMemcpyHostToDevice));
         // nodes into an array
@@ -489,46 +488,46 @@ public:
             information_set->memcpy_gpu_to_host();
         }
 
-        /*
-        for (auto information_set: information_sets_) {
-            std::cout << "-- IS " << information_set->get_hash() << std::endl;
 
-            std::cout << "Reach probability:" << std::endl;
-            std::cout << information_set->get_reach_probability() << std::endl;
+//        for (auto information_set: information_sets_) {
+//            std::cout << "-- IS " << information_set->get_hash() << std::endl;
+//
+//            std::cout << "Reach probability:" << std::endl;
+//            std::cout << information_set->get_reach_probability() << std::endl;
+//
+//            std::vector<double> average_strategy = information_set->get_average_strategy();
+//            //std::cout << information_set->get_hash() << " - size " << strategy.size() << std::endl;
+//
+//
+//            std::cout << "Average strategy:" << std::endl;
+//            for (int j = 0; j < average_strategy.size(); j++) {
+//                std::cout << average_strategy[j] << " ";
+//            }
+//            std::cout << std::endl;
+//
+//            std::vector<double> current_strategy = information_set->get_current_strategy();
+//            std::cout << "Current strategy:" << std::endl;
+//            for (int j = 0; j < current_strategy.size(); j++) {
+//                std::cout << current_strategy[j] << " ";
+//            }
+//            std::cout << std::endl;
+//
+//            std::vector<double> regrets = information_set->get_regrets();
+//            std::cout << "Regrets:" << std::endl;
+//            for (int j = 0; j < regrets.size(); j++) {
+//                std::cout << regrets[j] << " ";
+//            }
+//            std::cout << std::endl;
+//
+//            std::vector<double> cfv = information_set->get_cfv();
+//            std::cout << "CFV:" << std::endl;
+//            for (int j = 0; j < cfv.size(); j++) {
+//                std::cout << cfv[j] << " ";
+//            }
+//
+//            std::cout << std::endl;
+//        }
 
-            std::vector<double> average_strategy = information_set->get_average_strategy();
-            //std::cout << information_set->get_hash() << " - size " << strategy.size() << std::endl;
-
-
-            std::cout << "Average strategy:" << std::endl;
-            for (int j = 0; j < average_strategy.size(); j++) {
-                std::cout << average_strategy[j] << " ";
-            }
-            std::cout << std::endl;
-
-            std::vector<double> current_strategy = information_set->get_current_strategy();
-            std::cout << "Current strategy:" << std::endl;
-            for (int j = 0; j < current_strategy.size(); j++) {
-                std::cout << current_strategy[j] << " ";
-            }
-            std::cout << std::endl;
-
-            std::vector<double> regrets = information_set->get_regrets();
-            std::cout << "Regrets:" << std::endl;
-            for (int j = 0; j < regrets.size(); j++) {
-                std::cout << regrets[j] << " ";
-            }
-            std::cout << std::endl;
-
-            std::vector<double> cfv = information_set->get_cfv();
-            std::cout << "CFV:" << std::endl;
-            for (int j = 0; j < cfv.size(); j++) {
-                std::cout << cfv[j] << " ";
-            }
-
-            std::cout << std::endl;
-        }
-         */
     }
 
     ~GameLoader() {
@@ -549,15 +548,9 @@ public:
         free(information_sets_t_);
         CHECK_ERROR(cudaFree(dev_informations_sets_));
 
+        free(nodes_);
+        CHECK_ERROR(cudaFree(dev_nodes_));
     }
-
-    /*
-    output_file << node_hash << std::endl;
-    output_file << node_number_of_actions << std::endl;
-    output_file << node_player << std::endl;
-    output_file << node_parent_hash << std::endl;
-    output_file << information_set_hash << std::endl;
-    */
 
     void load() {
         unsigned int max_depth = 0;
@@ -640,14 +633,16 @@ public:
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
 
-        float elapsed_time = 0.0;
-        cudaEventElapsedTime(&elapsed_time, start, stop);
 
-        std::cout << elapsed_time << " miliseconds" << std::endl;
+        cudaEventElapsedTime(&elapsed_time_, start, stop);
 
         cudaEventDestroy(start);
         cudaEventDestroy(stop);
     };
+
+    float elapsed_time() {
+        return elapsed_time_;
+    }
 
     void run_iteration(float iteration) {
         // Regret matching
@@ -690,12 +685,80 @@ public:
 
 
 int main () {
-    GameLoader game_loader = GameLoader("/home/ruda/CLionProjects/gpucfr/gs4.game");
-    game_loader.load();
-    game_loader.memcpy_host_to_gpu();
-    game_loader.run_iterations(1000);
-    game_loader.memcpy_gpu_to_host();
+    /* Goofspiel 2 */
+    unsigned int iterations = 1000;
+    GameLoader game_loader1 = GameLoader("../gs2.game");
+    game_loader1.load();
+    game_loader1.memcpy_host_to_gpu();
+    game_loader1.run_iterations(iterations);
+    game_loader1.memcpy_gpu_to_host();
+    std::cout << "1000 iterations takes " << game_loader1.elapsed_time() << "ms on Goospiel 2" << std::endl;
 
-
+//    iterations = 5000;
+//    GameLoader game_loader2 = GameLoader("../gs2.game");
+//    game_loader2.load();
+//    game_loader2.memcpy_host_to_gpu();
+//    game_loader2.run_iterations(iterations);
+//    game_loader2.memcpy_gpu_to_host();
+//    std::cout << "1000 iterations takes " << game_loader2.elapsed_time() << "ms on Goospiel 2" << std::endl;
+//
+//    iterations = 10000;
+//    GameLoader game_loader3 = GameLoader("../gs2.game");
+//    game_loader3.load();
+//    game_loader3.memcpy_host_to_gpu();
+//    game_loader3.run_iterations(iterations);
+//    game_loader3.memcpy_gpu_to_host();
+//    std::cout << "1000 iterations takes " << game_loader3.elapsed_time() << "ms on Goospiel 2" << std::endl;
+//
+//    /* Goofspiel 3 */
+//    iterations = 1000;
+//    GameLoader game_loader4 = GameLoader("../gs3.game");
+//    game_loader4.load();
+//    game_loader4.memcpy_host_to_gpu();
+//    game_loader4.run_iterations(iterations);
+//    game_loader4.memcpy_gpu_to_host();
+//    std::cout << "1000 iterations takes " << game_loader4.elapsed_time() << "ms on Goospiel 3" << std::endl;
+//
+//    iterations = 5000;
+//    GameLoader game_loader5 = GameLoader("../gs3.game");
+//    game_loader5.load();
+//    game_loader5.memcpy_host_to_gpu();
+//    game_loader5.run_iterations(iterations);
+//    game_loader5.memcpy_gpu_to_host();
+//    std::cout << "1000 iterations takes " << game_loader5.elapsed_time() << "ms on Goospiel 3" << std::endl;
+//
+//    iterations = 10000;
+//    GameLoader game_loader6 = GameLoader("../gs3.game");
+//    game_loader6.load();
+//    game_loader6.memcpy_host_to_gpu();
+//    game_loader6.run_iterations(iterations);
+//    game_loader6.memcpy_gpu_to_host();
+//    std::cout << "1000 iterations takes " << game_loader6.elapsed_time() << "ms on Goospiel 3" << std::endl;
+//
+//    /* Goofspiel 3 */
+//    iterations = 1000;
+//    GameLoader game_loader7 = GameLoader("../gs4.game");
+//    game_loader7.load();
+//    game_loader7.memcpy_host_to_gpu();
+//    game_loader7.run_iterations(iterations);
+//    game_loader7.memcpy_gpu_to_host();
+//    std::cout << "1000 iterations takes " << game_loader7.elapsed_time() << "ms on Goospiel 4" << std::endl;
+//
+//    iterations = 5000;
+//    GameLoader game_loader8 = GameLoader("../gs4.game");
+//    game_loader8.load();
+//    game_loader8.memcpy_host_to_gpu();
+//    game_loader8.run_iterations(iterations);
+//    game_loader8.memcpy_gpu_to_host();
+//    std::cout << "1000 iterations takes " << game_loader8.elapsed_time() << "ms on Goospiel 4" << std::endl;
+//
+//    iterations = 10000;
+//    GameLoader game_loader9 = GameLoader("../gs4.game");
+//    game_loader9.load();
+//    game_loader9.memcpy_host_to_gpu();
+//    game_loader9.run_iterations(iterations);
+//    game_loader9.memcpy_gpu_to_host();
+//    std::cout << "1000 iterations takes " << game_loader9.elapsed_time() << "ms on Goospiel 4" << std::endl;
+//
     return 0;
 }
