@@ -506,6 +506,7 @@ public:
             information_set->memcpy_gpu_to_host();
         }
 
+        /*
         std::cout << std::endl; // TODO remove
 
         for (auto information_set: information_sets_) {
@@ -546,6 +547,7 @@ public:
 
             std::cout << std::endl;
         }
+         */
 
     }
 
@@ -644,23 +646,43 @@ public:
         terminal_nodes_size_ = game_tree_.at(game_tree_.size() - 1).size();
     }
 
-    void run_iteration(int iteration) {
-        // Regret matching
-        std::cout << "iteration " << iteration << std::endl;
-        rm_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size());
+    void run_iterations (int iterations)  {
+        cudaEvent_t start, stop;
 
+        cudaEventCreate(&start);
+        cudaEventCreate(&stop);
+
+        cudaEventRecord(start, 0);
+
+        for (int i = 1; i < iterations; i++) {
+            run_iteration((float ) i);
+        }
+        cudaEventRecord(stop, 0);
+        cudaEventSynchronize(stop);
+
+        float elapsed_time = 0.0;
+        cudaEventElapsedTime(&elapsed_time, start, stop);
+
+        std::cout << elapsed_time << "miliseconds" << std::endl;
+
+        cudaEventDestroy(start);
+        cudaEventDestroy(stop);
+    };
+
+    void run_iteration(float iteration) {
+        // Regret matching
+        rm_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size());
         cudaDeviceSynchronize();
         // Reach probabilities
         rp_kernel<<<1, 32>>>(dev_nodes_, nodes_size_ - terminal_nodes_size_);
-
         cudaDeviceSynchronize();
-
+        // Average strategies
         average_strategy_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size(), iteration);
-//        cudaDeviceSynchronize();
+        cudaDeviceSynchronize();
         // Counterfactual values
         cfv_kernel<<<1, 32>>>(dev_terminal_nodes_, terminal_nodes_size_);
         cudaDeviceSynchronize();
-//        // Regrets
+        // Regrets
         regret_update_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size());
         cudaDeviceSynchronize();
     }
@@ -696,11 +718,8 @@ public:
 int main () {
     GameLoader game_loader = GameLoader("/home/ruda/CLionProjects/gpucfr/output.game");
     game_loader.load();
-//    game_loader.print_nodes();
     game_loader.memcpy_host_to_gpu();
-    for (int i = 1; i < 1000; i++) {
-        game_loader.run_iteration(i);
-    }
+    game_loader.run_iterations(1000);
     game_loader.memcpy_gpu_to_host();
 
 
