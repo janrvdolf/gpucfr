@@ -22,8 +22,6 @@ static void handleCUDAError(
 
 #define CHECK_ERROR( error ) ( handleCUDAError( error, __FILE__, __LINE__ ) )
 
-#define THREADS_PER_BLOCK 32u // THREADS_PER_BLOCK
-
 typedef float INFORMATION_SET;
 
 typedef struct efg_node_t {
@@ -42,7 +40,7 @@ typedef struct efg_node_t {
 __global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int information_set_size) {
     unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (/*thread_id == 0 &&*/ thread_id < information_set_size) {
+    if (thread_id < information_set_size) {
         INFORMATION_SET * infoset_data = dev_infoset_data[thread_id];
         float number_of_actions_f = infoset_data[0];
         auto number_of_actions = (unsigned int) number_of_actions_f;
@@ -88,8 +86,7 @@ __global__ void average_strategy_kernel(INFORMATION_SET ** dev_infoset_data, uns
 __global__ void rp_kernel(EFGNODE ** nodes, unsigned int nodes_size) {
     unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (/*thread_id == 0 &&*/ thread_id < nodes_size) {
-        //printf("Computing reach probability:\n");
+    if (thread_id < nodes_size) {
         EFGNODE* node = nodes[thread_id];
         INFORMATION_SET *information_set = node->information_set;
 
@@ -97,15 +94,12 @@ __global__ void rp_kernel(EFGNODE ** nodes, unsigned int nodes_size) {
         float reach_probability_minus_i = 1.0;
         float reach_probability_i = 1.0;
 
-        //printf("Node's player %d \n", node_player);
-
         EFGNODE *from_node = node;
         EFGNODE *tmp = node->parent;
         while (tmp) {
             int child_idx = -1;
             for (int i = 0; i < tmp->childs_count; i++) {
                 EFGNODE **children = tmp->childs;
-                //printf("child %p\n", children[i]);
                 if (from_node == children[i]) {
                     child_idx = i;
                     break;
@@ -120,12 +114,10 @@ __global__ void rp_kernel(EFGNODE ** nodes, unsigned int nodes_size) {
                     reach_probability_i *= tmp_information_set[2+child_idx];
                 }
             }
-
-            //printf("value %f, parent %p\n", tmp->value, tmp->parent);
             from_node = tmp;
             tmp = tmp->parent;
         }
-        //printf("Reach probability is %f\n", reach_probability);
+
         node->reach_probability = reach_probability_minus_i;
         // updates the information set's reach probability
         information_set[1] = reach_probability_i;
@@ -136,61 +128,45 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, unsigned int terminal_node
     unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (thread_id < terminal_nodes_cnt) {
-        //if (thread_id == 1) {
-            //printf("terminal nodes cnt %d, first array element %p\n", terminal_nodes_cnt, terminal_nodes[thread_id]);
+        EFGNODE *node = terminal_nodes[thread_id];
 
-            EFGNODE *node = terminal_nodes[thread_id];
+        float value = node->value;
 
-            float value = node->value;
+        EFGNODE *from_node = node;
+        node = node->parent; // a terminal node has always a parent node
 
-            // here is terminal nodes, no information set
+        while (node) {
+            // search nodes's index in childs
+            int child_idx = -1;
+            for (int i = 0; i < node->childs_count; i++) {
+                EFGNODE **childs = node->childs;
 
-            //printf("node %p, value %f\n", node, value);
-
-            EFGNODE *from_node = node;
-            node = node->parent; // a terminal node has always a parent node
-
-            while (node) {
-                //printf("----\n");
-                //printf("value %f, parent %p, childs %d\n", value, node->parent, node->childs_count);
-
-                // search nodes's index in childs
-                int child_idx = -1;
-                for (int i = 0; i < node->childs_count; i++) {
-                    EFGNODE **childs = node->childs;
-                    //printf("child %p\n", childs[i]);
-
-                    if (from_node == childs[i]) {
-                        child_idx = i;
-                        break;
-                    }
+                if (from_node == childs[i]) {
+                    child_idx = i;
+                    break;
                 }
-                //printf("child's index is %d\n", child_idx);
-
-                if (child_idx > -1) {
-                    INFORMATION_SET *information_set = node->information_set; // tohle bych mohl nacist do shared memory
-                    int number_of_actions = information_set[0];
-                    int offset = 2; // offset for the current strategy
-
-                    float action_probability = information_set[offset + child_idx];
-
-                    //printf("node information set value %f, act prob %f\n", information_set[0], action_probability); // zero index is for number of
-
-                    offset = 2 + 2 * number_of_actions; // offset for counterfactual values
-
-                    float player_sigh = 1.0;
-                    if (node->player == 2) {
-                        player_sigh = -1.0;
-                    }
-                    atomicAdd(&information_set[offset + child_idx], player_sigh * node->reach_probability * value);
-
-                    value *= action_probability;
-                }
-                from_node = node;
-                node = node->parent;
             }
-            //printf("final value %f", value);
-       // }
+
+            if (child_idx > -1) {
+                INFORMATION_SET *information_set = node->information_set;
+                int number_of_actions = information_set[0];
+                int offset = 2; // offset for the current strategy
+
+                float action_probability = information_set[offset + child_idx];
+
+                offset = 2 + 2 * number_of_actions; // offset for counterfactual values
+
+                float player_sigh = 1.0;
+                if (node->player == 2) {
+                    player_sigh = -1.0;
+                }
+                atomicAdd(&information_set[offset + child_idx], player_sigh * node->reach_probability * value);
+
+                value *= action_probability;
+            }
+            from_node = node;
+            node = node->parent;
+        }
     }
 }
 
