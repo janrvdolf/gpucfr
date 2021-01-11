@@ -96,7 +96,7 @@ typedef struct efg_node_t {
 __global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int information_set_size, float iteration) {
     unsigned int thread_id = threadIdx.x;
 
-    if (thread_id == 0 && thread_id < information_set_size) {
+    if (/*thread_id == 0 &&*/ thread_id < information_set_size) {
         INFORMATION_SET * infoset_data = dev_infoset_data[thread_id];
         float number_of_actions_f = infoset_data[0];
         auto number_of_actions = (unsigned int) infoset_data[0];
@@ -126,7 +126,50 @@ __global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int info
     }
 }
 
-__global__ void cfv_kernel(EFGNODE ** terminal_nodes, int terminal_nodes_cnt) {
+__global__ void rp_kernel(EFGNODE ** nodes, unsigned int nodes_size) {
+    int thread_id = threadIdx.x;
+
+    if (thread_id == 5 && thread_id < nodes_size) {
+        //printf("Computing reach probability:\n");
+        EFGNODE* node = nodes[thread_id];
+        INFORMATION_SET *information_set = node->information_set;
+
+        unsigned int node_player = node->player;
+        float reach_probability = 1.0;
+
+        //printf("Node's player %d \n", node_player);
+
+        EFGNODE *from_node = node;
+        EFGNODE *tmp = node->parent;
+        while (tmp) {
+            if (tmp->player != node_player) {
+                int child_idx = -1;
+                for (int i = 0; i < tmp->childs_count; i++) {
+                    EFGNODE **children = tmp->childs;
+                    //printf("child %p\n", children[i]);
+                    if (from_node == children[i]) {
+                        child_idx = i;
+                        break;
+                    }
+                }
+                if (child_idx > -1) {
+                    INFORMATION_SET *tmp_information_set = tmp->information_set;
+                    // get from the 'tmp' node's current strategy the action probability
+                    reach_probability *= tmp_information_set[1+child_idx];
+                }
+            }
+            //printf("value %f, parent %p\n", tmp->value, tmp->parent);
+            from_node = tmp;
+            tmp = tmp->parent;
+        }
+        //printf("Reach probability is %f\n", reach_probability);
+        node->reach_probability = reach_probability;
+        // updates the information set's reach probability
+        information_set[2] = reach_probability;
+    }
+}
+
+__global__ void cfv_kernel(EFGNODE ** terminal_nodes, unsigned int terminal_nodes_cnt) {
     int thread_id = threadIdx.x;
 
     if (thread_id < terminal_nodes_cnt) {
@@ -227,7 +270,8 @@ private:
         unsigned int offset = 1;
         // init current_strategy
         for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
-            information_set_t_[i] = 1./number_of_actions_;
+            //information_set_t_[i] = 1./number_of_actions_;
+            information_set_t_[i] = 0;
         }
         offset += number_of_actions_;
         // init average strategy
@@ -417,6 +461,12 @@ private:
     INFORMATION_SET **information_sets_t_ = NULL;
     INFORMATION_SET **dev_informations_sets_ = NULL;
 
+    unsigned int nodes_size_ = 0;
+    unsigned int terminal_nodes_size_ = 0;
+
+    EFGNODE **nodes_ = NULL;
+    EFGNODE **dev_nodes_ = NULL;
+
 public:
     std::string path_;
     std::vector<std::vector<Node*>> game_tree_;
@@ -437,10 +487,10 @@ public:
             }
         }
         // terminal nodes
-        int terminal_nodes_size = game_tree_.at(game_tree_.size() - 1).size();
+        unsigned int terminal_nodes_size = terminal_nodes_size_;
         size_t terminal_nodes_ptr_size = sizeof(EFGNODE**) * terminal_nodes_size;
         terminal_nodes_ = (EFGNODE**) malloc(terminal_nodes_ptr_size);
-        int cnt = 0;
+        unsigned int cnt = 0;
         for (auto node: game_tree_.at(game_tree_.size() - 1)) {
             terminal_nodes_[cnt++] = node->get_gpu_ptr();
         }
@@ -453,9 +503,20 @@ public:
         for (int i = 0; i < information_sets_.size(); i++) {
             information_sets_t_[i] = information_sets_.at(i)->get_gpu_ptr();
         }
-        dev_informations_sets_ = (INFORMATION_SET **) malloc(information_sets_size);
+        dev_informations_sets_ = (INFORMATION_SET **) malloc(information_sets_size); // TODO review looks wrong
         CHECK_ERROR(cudaMalloc((void **) &dev_informations_sets_, information_sets_size));
         CHECK_ERROR(cudaMemcpy(dev_informations_sets_, information_sets_t_, information_sets_size, cudaMemcpyHostToDevice));
+        // nodes into an array
+        size_t nodes_size = sizeof(EFGNODE**) * nodes_size_;
+        nodes_ = (EFGNODE**) malloc(nodes_size);
+        cnt = 0;
+        for (const auto &nodes_per_depth: game_tree_) {
+            for (auto node: nodes_per_depth) {
+                nodes_[cnt++] = node->get_gpu_ptr();
+            }
+        }
+        CHECK_ERROR(cudaMalloc((void **) &dev_nodes_, nodes_size));
+        CHECK_ERROR(cudaMemcpy(dev_nodes_, nodes_, nodes_size, cudaMemcpyHostToDevice));
     }
 
     void memcpy_gpu_to_host () {
@@ -466,14 +527,14 @@ public:
 
         std::cout << std::endl; // TODO remove
 
-        for (auto information_set: information_sets_) {
+        /*for (auto information_set: information_sets_) {
             std::vector<double> strategy = information_set->get_current_strategy();
             std::cout << information_set->get_hash() << " - size " << strategy.size() << std::endl;
             for (int j = 0; j < strategy.size(); j++) {
                 std::cout << strategy[j] << " ";
             }
             std::cout << std::endl;
-        }
+        }*/
 
     }
 
@@ -557,6 +618,8 @@ public:
 
                 node_hash2node_ptr_.emplace(std::make_pair(node_hash, node));
 
+                nodes_size_++;
+
                 if (node_parent) {
                     node_parent->add_child(node);
                 }
@@ -566,17 +629,21 @@ public:
             game_tree_.push_back(tmp_nodes_vec);
         }
         input_file.close();
+
+        terminal_nodes_size_ = game_tree_.at(game_tree_.size() - 1).size();
     }
 
     void run_iteration(int iteration) {
+        // Regret matching
         rm_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size(), iteration);
 
-        // pri vypoctu reach probability ulozit reach probability do infosetu;
-
-        int terminal_nodes_size = game_tree_.at(game_tree_.size() - 1). size();
-        cfv_kernel<<<1, 32>>>(dev_terminal_nodes_, terminal_nodes_size);
-
-        regret_update_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size());
+        cudaDeviceSynchronize();
+        // Reach probabilities
+        rp_kernel<<<1, 32>>>(dev_nodes_, nodes_size_ - terminal_nodes_size_); // TODO maybe I should run it on all nodes
+        // Counterfactual values
+//        cfv_kernel<<<1, 32>>>(dev_terminal_nodes_, terminal_nodes_size_);
+        // Regrets
+//        regret_update_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size());
     }
 
     void print_nodes() {
