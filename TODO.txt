@@ -1,5 +1,6 @@
 TODO:
-- reach probabilities - > udrzim si v jakym uzlu jsem, ptom jedu while cyklus do rootu, az se dostanu do rootu, tak updatuju reach probability uzlu.
+
+- zjistit card capability to create a grid
 
 - pri vypoctu reach probability ulozit reach probability do infosetu;
 
