@@ -18,7 +18,11 @@ static void handleCUDAError(
     }
 }
 
+#define THREADS_PER_BLOCK 32u // THREADS_PER_BLOCK
+
 #define CHECK_ERROR( error ) ( handleCUDAError( error, __FILE__, __LINE__ ) )
+
+#define THREADS_PER_BLOCK 32u // THREADS_PER_BLOCK
 
 typedef float INFORMATION_SET;
 
@@ -36,7 +40,7 @@ typedef struct efg_node_t {
 } EFGNODE;
 
 __global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int information_set_size) {
-    unsigned int thread_id = threadIdx.x;
+    unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (/*thread_id == 0 &&*/ thread_id < information_set_size) {
         INFORMATION_SET * infoset_data = dev_infoset_data[thread_id];
@@ -64,7 +68,7 @@ __global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int info
 }
 
 __global__ void average_strategy_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int information_set_size, float iteration) {
-    unsigned int thread_id = threadIdx.x;
+    unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (thread_id < information_set_size) {
         INFORMATION_SET * infoset_data = dev_infoset_data[thread_id];
@@ -82,7 +86,7 @@ __global__ void average_strategy_kernel(INFORMATION_SET ** dev_infoset_data, uns
 }
 
 __global__ void rp_kernel(EFGNODE ** nodes, unsigned int nodes_size) {
-    int thread_id = threadIdx.x;
+    unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (/*thread_id == 0 &&*/ thread_id < nodes_size) {
         //printf("Computing reach probability:\n");
@@ -129,7 +133,7 @@ __global__ void rp_kernel(EFGNODE ** nodes, unsigned int nodes_size) {
 }
 
 __global__ void cfv_kernel(EFGNODE ** terminal_nodes, unsigned int terminal_nodes_cnt) {
-    int thread_id = threadIdx.x;
+    unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (thread_id < terminal_nodes_cnt) {
         //if (thread_id == 1) {
@@ -191,7 +195,7 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, unsigned int terminal_node
 }
 
 __global__ void regret_update_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int information_set_size) {
-    unsigned int thread_id = threadIdx.x;
+    unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (thread_id < information_set_size) {
         INFORMATION_SET * infoset_data = dev_infoset_data[thread_id];
@@ -235,7 +239,7 @@ private:
         offset += number_of_actions_;
         // init average strategy
         for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
-            information_set_t_[i] = 0; // TODO check if this should also have uniform strategy
+            information_set_t_[i] = 0;
         }
         offset += number_of_actions_;
         // init counterfactual values
@@ -373,9 +377,7 @@ public:
     }
 
     void memcpy_host_to_gpu () {
-//        if (node_t_ == NULL && dev_node_t_ == NULL && dev_children_ == NULL) {
             size_t node_t_size = sizeof(EFGNODE);
-//            node_t_ = (EFGNODE*) malloc(node_t_size);
 
             if (parent_) {
                 node_t_->parent = parent_->get_gpu_ptr();
@@ -447,6 +449,11 @@ private:
 
     EFGNODE **nodes_ = NULL;
     EFGNODE **dev_nodes_ = NULL;
+
+    unsigned int compute_blocks_number(int size) {
+        unsigned int padded = std::ceil((float)size/THREADS_PER_BLOCK)*THREADS_PER_BLOCK;
+        return padded/THREADS_PER_BLOCK;
+    }
 
 public:
     std::string path_;
@@ -671,19 +678,29 @@ public:
 
     void run_iteration(float iteration) {
         // Regret matching
-        rm_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size());
+        unsigned int data_size = information_sets_.size();
+        int blocks = compute_blocks_number(data_size);
+        rm_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_informations_sets_, data_size);
         cudaDeviceSynchronize();
         // Reach probabilities
-        rp_kernel<<<1, 32>>>(dev_nodes_, nodes_size_ - terminal_nodes_size_);
+        data_size = nodes_size_ - terminal_nodes_size_;
+        blocks = compute_blocks_number(data_size);
+        rp_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_nodes_, data_size);
         cudaDeviceSynchronize();
         // Average strategies
-        average_strategy_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size(), iteration);
+        data_size = information_sets_.size();
+        blocks = compute_blocks_number(information_sets_.size());
+        average_strategy_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_informations_sets_, data_size, iteration);
         cudaDeviceSynchronize();
         // Counterfactual values
-        cfv_kernel<<<1, 32>>>(dev_terminal_nodes_, terminal_nodes_size_);
+        data_size = terminal_nodes_size_;
+        blocks = compute_blocks_number(data_size);
+        cfv_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_terminal_nodes_, data_size);
         cudaDeviceSynchronize();
         // Regrets
-        regret_update_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size());
+        data_size = information_sets_.size();
+        blocks = compute_blocks_number(data_size);
+        regret_update_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_informations_sets_, data_size);
         cudaDeviceSynchronize();
     }
 
@@ -716,10 +733,10 @@ public:
 
 
 int main () {
-    GameLoader game_loader = GameLoader("/home/ruda/CLionProjects/gpucfr/output.game");
+    GameLoader game_loader = GameLoader("/home/ruda/CLionProjects/gpucfr/gs4.game");
     game_loader.load();
     game_loader.memcpy_host_to_gpu();
-    game_loader.run_iterations(10000);
+    game_loader.run_iterations(1000);
     game_loader.memcpy_gpu_to_host();
 
 
