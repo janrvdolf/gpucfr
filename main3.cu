@@ -663,7 +663,7 @@ public:
         float elapsed_time = 0.0;
         cudaEventElapsedTime(&elapsed_time, start, stop);
 
-        std::cout << elapsed_time << "miliseconds" << std::endl;
+        std::cout << elapsed_time << " miliseconds" << std::endl;
 
         cudaEventDestroy(start);
         cudaEventDestroy(stop);
@@ -719,7 +719,7 @@ int main () {
     GameLoader game_loader = GameLoader("/home/ruda/CLionProjects/gpucfr/output.game");
     game_loader.load();
     game_loader.memcpy_host_to_gpu();
-    game_loader.run_iterations(1000);
+    game_loader.run_iterations(10000);
     game_loader.memcpy_gpu_to_host();
 
 
