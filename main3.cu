@@ -41,17 +41,18 @@ __global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int info
     if (/*thread_id == 0 &&*/ thread_id < information_set_size) {
         INFORMATION_SET * infoset_data = dev_infoset_data[thread_id];
         float number_of_actions_f = infoset_data[0];
-        auto number_of_actions = (unsigned int) infoset_data[0];
+        auto number_of_actions = (unsigned int) number_of_actions_f;
         unsigned int offset_current_strategy = 2;
+        unsigned int offset_regrets = 2 + 3*number_of_actions;
 
         float sum = 0.0;
         for (int i = 0; i < number_of_actions; i++) {
-            sum += max(infoset_data[i + offset_current_strategy], 0.0f);
+            sum += max(infoset_data[i + offset_regrets], 0.0f);
         }
         // update the current strategy
         if (sum > 0.0) {
             for (int i = 0; i < number_of_actions; ++i) {
-                infoset_data[i + offset_current_strategy] = max(infoset_data[i + offset_current_strategy], 0.0f)/sum;
+                infoset_data[i + offset_current_strategy] = max(infoset_data[i + offset_regrets], 0.0f)/sum;
             }
 
         } else {
@@ -65,7 +66,7 @@ __global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int info
 __global__ void average_strategy_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int information_set_size, float iteration) {
     unsigned int thread_id = threadIdx.x;
 
-    if (thread_id == 0 && thread_id < information_set_size) {
+    if (/*thread_id == 0 &&*/ thread_id < information_set_size) {
         INFORMATION_SET * infoset_data = dev_infoset_data[thread_id];
 
         auto number_of_actions = (unsigned int) infoset_data[0];
@@ -74,8 +75,8 @@ __global__ void average_strategy_kernel(INFORMATION_SET ** dev_infoset_data, uns
 
         float reach_probability = infoset_data[1];
 
-        printf("Average strategy kernel:\n");
-        printf("Reach probability %f\n", reach_probability);
+//        printf("Average strategy kernel:\n");
+//        printf("Reach probability %f\n", reach_probability);
 
         for (int i = 0; i < number_of_actions; i++) {
             infoset_data[i + offset_average_strategy] = (iteration-1)/iteration * infoset_data[i + offset_average_strategy] + (1.0/iteration) * reach_probability * infoset_data[i + offset_current_strategy];
@@ -86,43 +87,47 @@ __global__ void average_strategy_kernel(INFORMATION_SET ** dev_infoset_data, uns
 __global__ void rp_kernel(EFGNODE ** nodes, unsigned int nodes_size) {
     int thread_id = threadIdx.x;
 
-    if (thread_id == 0 && thread_id < nodes_size) {
+    if (/*thread_id == 0 &&*/ thread_id < nodes_size) {
         //printf("Computing reach probability:\n");
         EFGNODE* node = nodes[thread_id];
         INFORMATION_SET *information_set = node->information_set;
 
         unsigned int node_player = node->player;
-        float reach_probability = 1.0;
+        float reach_probability_minus_i = 1.0;
+        float reach_probability_i = 1.0;
 
         //printf("Node's player %d \n", node_player);
 
         EFGNODE *from_node = node;
         EFGNODE *tmp = node->parent;
         while (tmp) {
-            if (tmp->player != node_player) {
-                int child_idx = -1;
-                for (int i = 0; i < tmp->childs_count; i++) {
-                    EFGNODE **children = tmp->childs;
-                    //printf("child %p\n", children[i]);
-                    if (from_node == children[i]) {
-                        child_idx = i;
-                        break;
-                    }
-                }
-                if (child_idx > -1) {
-                    INFORMATION_SET *tmp_information_set = tmp->information_set;
-                    // get from the 'tmp' node's current strategy the action probability
-                    reach_probability *= tmp_information_set[2+child_idx];
+            int child_idx = -1;
+            for (int i = 0; i < tmp->childs_count; i++) {
+                EFGNODE **children = tmp->childs;
+                //printf("child %p\n", children[i]);
+                if (from_node == children[i]) {
+                    child_idx = i;
+                    break;
                 }
             }
+            if (child_idx > -1) {
+                INFORMATION_SET *tmp_information_set = tmp->information_set;
+                // get from the 'tmp' node's current strategy the action probability
+                if (tmp->player != node_player) {
+                    reach_probability_minus_i *= tmp_information_set[2+child_idx];
+                } else {
+                    reach_probability_i *= tmp_information_set[2+child_idx];
+                }
+            }
+
             //printf("value %f, parent %p\n", tmp->value, tmp->parent);
             from_node = tmp;
             tmp = tmp->parent;
         }
         //printf("Reach probability is %f\n", reach_probability);
-        node->reach_probability = reach_probability;
+        node->reach_probability = reach_probability_minus_i;
         // updates the information set's reach probability
-        information_set[1] = reach_probability;
+        information_set[1] = reach_probability_i;
     }
 }
 
@@ -130,8 +135,8 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, unsigned int terminal_node
     int thread_id = threadIdx.x;
 
     if (thread_id < terminal_nodes_cnt) {
-        if (thread_id == 1) {
-            printf("terminal nodes cnt %d, first array element %p\n", terminal_nodes_cnt, terminal_nodes[thread_id]);
+        //if (thread_id == 1) {
+            //printf("terminal nodes cnt %d, first array element %p\n", terminal_nodes_cnt, terminal_nodes[thread_id]);
 
             EFGNODE *node = terminal_nodes[thread_id];
 
@@ -139,53 +144,52 @@ __global__ void cfv_kernel(EFGNODE ** terminal_nodes, unsigned int terminal_node
 
             // here is terminal nodes, no information set
 
-            printf("node %p, value %f\n", node, value);
+            //printf("node %p, value %f\n", node, value);
 
             EFGNODE *from_node = node;
             node = node->parent; // a terminal node has always a parent node
 
             while (node) {
-                printf("----\n");
-                printf("value %f, parent %p, childs %d\n", value, node->parent, node->childs_count);
+                //printf("----\n");
+                //printf("value %f, parent %p, childs %d\n", value, node->parent, node->childs_count);
 
                 // search nodes's index in childs
                 int child_idx = -1;
                 for (int i = 0; i < node->childs_count; i++) {
                     EFGNODE **childs = node->childs;
-                    printf("child %p\n", childs[i]);
+                    //printf("child %p\n", childs[i]);
 
                     if (from_node == childs[i]) {
                         child_idx = i;
                         break;
                     }
                 }
-                printf("child's index is %d\n", child_idx);
-                INFORMATION_SET *information_set = node->information_set; // tohle bych mohl nacist do shared memory
-                int number_of_actions = information_set[0];
+                //printf("child's index is %d\n", child_idx);
 
                 if (child_idx > -1) {
-                    // from current strategy get the action probability
-                    int offset = 1; // offset for strategy; // TODO refactor
+                    INFORMATION_SET *information_set = node->information_set; // tohle bych mohl nacist do shared memory
+                    int number_of_actions = information_set[0];
+                    int offset = 2; // offset for the current strategy
+
                     float action_probability = information_set[offset + child_idx];
 
-                    printf("node information set value %f, act prob %f\n", information_set[0], action_probability); // zero index is for number of
+                    //printf("node information set value %f, act prob %f\n", information_set[0], action_probability); // zero index is for number of
 
+                    offset = 2 + 2 * number_of_actions; // offset for counterfactual values
 
-                    // multiply the value
+                    float player_sigh = 1.0;
+                    if (node->player == 2) {
+                        player_sigh = -1.0;
+                    }
+                    atomicAdd(&information_set[offset + child_idx], player_sigh * node->reach_probability * value);
+
                     value *= action_probability;
-
-                    // atomic add to "information_set->cfv[action]"
-                    offset = 1 + 2*number_of_actions;
-                    atomicAdd(&information_set[offset + child_idx], value); // question if to do after or before previous line
-
                 }
-
                 from_node = node;
                 node = node->parent;
             }
-
-            printf("final value %f", value);
-        }
+            //printf("final value %f", value);
+       // }
     }
 }
 
@@ -205,7 +209,7 @@ __global__ void regret_update_kernel(INFORMATION_SET ** dev_infoset_data, unsign
         }
 
         for (int i = 0; i < number_of_actions; i++) {
-            infoset_data[i + offset_regrets] = infoset_data[i + offset_regrets] + infoset_data[i + offset_cfv_values] - expected_utility;
+            infoset_data[i + offset_regrets] += infoset_data[i + offset_cfv_values] - expected_utility;
         }
     }
 }
@@ -286,6 +290,28 @@ public:
             returning_strategy.push_back(information_set_t_[i]);
         }
         return returning_strategy;
+    }
+
+    std::vector<double> get_regrets() {
+        std::vector<double> returning_strategy;
+        int offset = 2+3*number_of_actions_;
+        for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
+            returning_strategy.push_back(information_set_t_[i]);
+        }
+        return returning_strategy;
+    }
+
+    std::vector<double> get_cfv() {
+        std::vector<double> returning_strategy;
+        int offset = 2+2*number_of_actions_;
+        for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
+            returning_strategy.push_back(information_set_t_[i]);
+        }
+        return returning_strategy;
+    }
+
+    float get_reach_probability () {
+        return information_set_t_[1];
     }
 
     std::vector<double> get_average_strategy() {
@@ -485,14 +511,44 @@ public:
 
         std::cout << std::endl; // TODO remove
 
-        /*for (auto information_set: information_sets_) {
-            std::vector<double> strategy = information_set->get_current_strategy();
-            std::cout << information_set->get_hash() << " - size " << strategy.size() << std::endl;
-            for (int j = 0; j < strategy.size(); j++) {
-                std::cout << strategy[j] << " ";
+        for (auto information_set: information_sets_) {
+            std::cout << "-- IS " << information_set->get_hash() << std::endl;
+
+            std::cout << "Reach probability:" << std::endl;
+            std::cout << information_set->get_reach_probability() << std::endl;
+
+            std::vector<double> average_strategy = information_set->get_average_strategy();
+            //std::cout << information_set->get_hash() << " - size " << strategy.size() << std::endl;
+
+
+            std::cout << "Average strategy:" << std::endl;
+            for (int j = 0; j < average_strategy.size(); j++) {
+                std::cout << average_strategy[j] << " ";
             }
             std::cout << std::endl;
-        }*/
+
+            std::vector<double> current_strategy = information_set->get_current_strategy();
+            std::cout << "Current strategy:" << std::endl;
+            for (int j = 0; j < current_strategy.size(); j++) {
+                std::cout << current_strategy[j] << " ";
+            }
+            std::cout << std::endl;
+
+            std::vector<double> regrets = information_set->get_regrets();
+            std::cout << "Regrets:" << std::endl;
+            for (int j = 0; j < regrets.size(); j++) {
+                std::cout << regrets[j] << " ";
+            }
+            std::cout << std::endl;
+
+            std::vector<double> cfv = information_set->get_cfv();
+            std::cout << "CFV:" << std::endl;
+            for (int j = 0; j < cfv.size(); j++) {
+                std::cout << cfv[j] << " ";
+            }
+
+            std::cout << std::endl;
+        }
 
     }
 
@@ -593,19 +649,23 @@ public:
 
     void run_iteration(int iteration) {
         // Regret matching
+        std::cout << "iteration " << iteration << std::endl;
         rm_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size());
 
         cudaDeviceSynchronize();
         // Reach probabilities
-        rp_kernel<<<1, 32>>>(dev_nodes_, nodes_size_ - terminal_nodes_size_); // TODO maybe I should run it on all nodes
+        rp_kernel<<<1, 32>>>(dev_nodes_, nodes_size_ - terminal_nodes_size_);
 
         cudaDeviceSynchronize();
 
         average_strategy_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size(), iteration);
+//        cudaDeviceSynchronize();
         // Counterfactual values
-//        cfv_kernel<<<1, 32>>>(dev_terminal_nodes_, terminal_nodes_size_);
-        // Regrets
-//        regret_update_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size());
+        cfv_kernel<<<1, 32>>>(dev_terminal_nodes_, terminal_nodes_size_);
+        cudaDeviceSynchronize();
+//        // Regrets
+        regret_update_kernel<<<1, 32>>>(dev_informations_sets_, information_sets_.size());
+        cudaDeviceSynchronize();
     }
 
     void print_nodes() {
@@ -641,7 +701,7 @@ int main () {
     game_loader.load();
 //    game_loader.print_nodes();
     game_loader.memcpy_host_to_gpu();
-    for (int i = 1; i < 2; i++) {
+    for (int i = 1; i < 3; i++) {
         game_loader.run_iteration(i);
     }
     game_loader.memcpy_gpu_to_host();
