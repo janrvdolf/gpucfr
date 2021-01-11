@@ -513,9 +513,6 @@ public:
             information_set->memcpy_gpu_to_host();
         }
 
-        /*
-        std::cout << std::endl; // TODO remove
-
         for (auto information_set: information_sets_) {
             std::cout << "-- IS " << information_set->get_hash() << std::endl;
 
@@ -554,8 +551,6 @@ public:
 
             std::cout << std::endl;
         }
-         */
-
     }
 
     ~GameLoader() {
@@ -704,22 +699,6 @@ public:
         cudaDeviceSynchronize();
     }
 
-    void print_nodes() {
-        // free nodes
-        int cnt = 0;
-        for (const auto &nodes_vec: game_tree_) {
-            std::cout << "Depth " << ++cnt << std::endl;
-            for (Node *node: nodes_vec) {
-                std::cout << "->\t Node " << node << std::endl;
-                std::cout << "\tChilds:" << std::endl;
-                for (Node *child: node->children) {
-                    std::cout << child << std::endl;
-                }
-            }
-            std::cout << std::endl;
-        }
-    }
-
     bool export_strategy (std::string out_path) { // TODO output strategy from information sets hash -> float values
         return true;
     }
@@ -733,7 +712,7 @@ public:
 
 
 int main () {
-    GameLoader game_loader = GameLoader("/home/ruda/CLionProjects/gpucfr/gs4.game");
+    GameLoader game_loader = GameLoader("/home/ruda/CLionProjects/gpucfr/gs2.game");
     game_loader.load();
     game_loader.memcpy_host_to_gpu();
     game_loader.run_iterations(1000);
