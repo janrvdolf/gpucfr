@@ -66,7 +66,7 @@ __global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int info
 __global__ void average_strategy_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int information_set_size, float iteration) {
     unsigned int thread_id = threadIdx.x;
 
-    if (/*thread_id == 0 &&*/ thread_id < information_set_size) {
+    if (thread_id < information_set_size) {
         INFORMATION_SET * infoset_data = dev_infoset_data[thread_id];
 
         auto number_of_actions = (unsigned int) infoset_data[0];
@@ -74,9 +74,6 @@ __global__ void average_strategy_kernel(INFORMATION_SET ** dev_infoset_data, uns
         unsigned int offset_average_strategy = 2 + number_of_actions;
 
         float reach_probability = infoset_data[1];
-
-//        printf("Average strategy kernel:\n");
-//        printf("Reach probability %f\n", reach_probability);
 
         for (int i = 0; i < number_of_actions; i++) {
             infoset_data[i + offset_average_strategy] = (iteration-1)/iteration * infoset_data[i + offset_average_strategy] + (1.0/iteration) * reach_probability * infoset_data[i + offset_current_strategy];
@@ -701,7 +698,7 @@ int main () {
     game_loader.load();
 //    game_loader.print_nodes();
     game_loader.memcpy_host_to_gpu();
-    for (int i = 1; i < 3; i++) {
+    for (int i = 1; i < 1000; i++) {
         game_loader.run_iteration(i);
     }
     game_loader.memcpy_gpu_to_host();
