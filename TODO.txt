@@ -1,6 +1,10 @@
 TODO:
 - reach probabilities - > udrzim si v jakym uzlu jsem, ptom jedu while cyklus do rootu, az se dostanu do rootu, tak updatuju reach probability uzlu.
 
-- ADD TERMINAL NODES pridat terminalni nody do exportu a u kazdyho nodu specifikovat value (z pohledu hrace 1)
+- pri vypoctu reach probability ulozit reach probability do infosetu;
 
 - Udelat vystup pro strategie a nacitani do gtlibu, pak spustim exploitabilitu.
+
+
+- mereni doby vypoctu na gpu
+
