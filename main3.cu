@@ -22,64 +22,6 @@ static void handleCUDAError(
 
 typedef float INFORMATION_SET;
 
-void information_set_init(INFORMATION_SET* information_set, int number_of_actions) {
-    // init the number of actions
-    information_set[0] = number_of_actions;
-
-    int offset = 1;
-    // init current_strategy
-    for (int i = offset; i < number_of_actions + offset; i++) {
-        information_set[i] = 1./number_of_actions;
-    }
-
-    offset += number_of_actions;
-    // init average strategy
-    for (int i = offset; i < number_of_actions + offset; i++) {
-        information_set[i] = 0;
-    }
-
-    offset += number_of_actions;
-    // init counterfactual values
-    for (int i = offset; i < number_of_actions + offset; i++) {
-        information_set[i] = 0;
-    }
-
-    offset += number_of_actions;
-    // init regrets
-    for (int i = offset; i < number_of_actions + offset; i++) {
-        information_set[i] = 0;
-    }
-
-}
-
-void information_set_print(INFORMATION_SET* information_set) {
-    int offset = 0;
-    int number_of_actions = (int) information_set[0];
-
-    printf("INFORMATION SET %p\n", information_set);
-    printf("Number of actions %d\n", number_of_actions);
-    printf("Current strategy:\n");
-    offset += 1;
-    for (int i = 0; i < number_of_actions; i++) {
-        printf("%d: %f\n", i, information_set[i + offset]);
-    }
-    printf("Average strategy:\n");
-    offset += number_of_actions;
-    for (int i = 0; i < number_of_actions; i++) {
-        printf("%d: %f\n", i, information_set[i + offset]);
-    }
-    printf("CF values:\n");
-    offset += number_of_actions;
-    for (int i = 0; i < number_of_actions; i++) {
-        printf("%d: %f\n", i, information_set[i + offset]);
-    }
-    printf("Regrets:\n");
-    offset += number_of_actions;
-    for (int i = 0; i < number_of_actions; i++) {
-        printf("%d: %f\n", i, information_set[i + offset]);
-    }
-}
-
 typedef struct efg_node_t {
     struct efg_node_t *parent;
 
