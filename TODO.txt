@@ -1,2 +1,4 @@
 TODO:
 - zjistit card capability to create a grid
+
+- make the load, memcpy* private methods
