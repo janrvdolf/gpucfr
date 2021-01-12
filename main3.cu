@@ -672,7 +672,20 @@ public:
         cudaDeviceSynchronize();
     }
 
-    bool export_strategy (std::string out_path) { // TODO output strategy from information sets hash -> float values
+    bool export_strategy_for_gtlib (std::string path) {
+        // export average strategy
+        std::ofstream output(path);
+        output << information_sets_.size() << std::endl;
+        for (auto information_set: information_sets_) {
+            auto            average_strategy       = information_set->get_average_strategy();
+            unsigned int    average_strategy_size  = average_strategy.size();
+            output << information_set->get_hash()   << std::endl;
+            output << average_strategy_size         << std::endl;
+            for (int i = 0; i < average_strategy_size; i++) {
+                output << average_strategy[i] << std::endl;
+            }
+        }
+        output.close();
         return true;
     }
 
@@ -692,6 +705,7 @@ int main () {
     instance1.memcpy_host_to_gpu();
     instance1.run_iterations(iterations);
     instance1.memcpy_gpu_to_host();
+    instance1.export_strategy_for_gtlib("gs2.strategy");
 //    std::cout << "1000 iterations takes " << instance1.elapsed_time() << "ms on Goospiel 2" << std::endl;
 
 //    iterations = 5000;
