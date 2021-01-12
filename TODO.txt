@@ -1,12 +1,2 @@
 TODO:
-- Create a different kernel to update the average strategy (after computing the reach probabilities).
-
 - zjistit card capability to create a grid
-
-- pri vypoctu reach probability ulozit reach probability do infosetu;
-
-- Udelat vystup pro strategie a nacitani do gtlibu, pak spustim exploitabilitu.
-
-
-- mereni doby vypoctu na gpu
-
