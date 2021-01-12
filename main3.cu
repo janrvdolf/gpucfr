@@ -438,6 +438,8 @@ public:
 
     GPUCFR(std::string path) {
         path_ = path;
+
+        load();
     }
 
     void memcpy_host_to_gpu() {
@@ -488,46 +490,44 @@ public:
             information_set->memcpy_gpu_to_host();
         }
 
-
-        for (auto information_set: information_sets_) {
-            std::cout << "-- IS " << information_set->get_hash() << std::endl;
-
-            std::cout << "Reach probability:" << std::endl;
-            std::cout << information_set->get_reach_probability() << std::endl;
-
-            std::vector<double> average_strategy = information_set->get_average_strategy();
-            //std::cout << information_set->get_hash() << " - size " << strategy.size() << std::endl;
-
-
-            std::cout << "Average strategy:" << std::endl;
-            for (int j = 0; j < average_strategy.size(); j++) {
-                std::cout << average_strategy[j] << " ";
-            }
-            std::cout << std::endl;
-
-            std::vector<double> current_strategy = information_set->get_current_strategy();
-            std::cout << "Current strategy:" << std::endl;
-            for (int j = 0; j < current_strategy.size(); j++) {
-                std::cout << current_strategy[j] << " ";
-            }
-            std::cout << std::endl;
-
-            std::vector<double> regrets = information_set->get_regrets();
-            std::cout << "Regrets:" << std::endl;
-            for (int j = 0; j < regrets.size(); j++) {
-                std::cout << regrets[j] << " ";
-            }
-            std::cout << std::endl;
-
-            std::vector<double> cfv = information_set->get_cfv();
-            std::cout << "CFV:" << std::endl;
-            for (int j = 0; j < cfv.size(); j++) {
-                std::cout << cfv[j] << " ";
-            }
-
-            std::cout << std::endl;
-        }
-
+//        for (auto information_set: information_sets_) {
+//            std::cout << "-- IS " << information_set->get_hash() << std::endl;
+//
+//            std::cout << "Reach probability:" << std::endl;
+//            std::cout << information_set->get_reach_probability() << std::endl;
+//
+//            std::vector<double> average_strategy = information_set->get_average_strategy();
+//            //std::cout << information_set->get_hash() << " - size " << strategy.size() << std::endl;
+//
+//
+//            std::cout << "Average strategy:" << std::endl;
+//            for (int j = 0; j < average_strategy.size(); j++) {
+//                std::cout << average_strategy[j] << " ";
+//            }
+//            std::cout << std::endl;
+//
+//            std::vector<double> current_strategy = information_set->get_current_strategy();
+//            std::cout << "Current strategy:" << std::endl;
+//            for (int j = 0; j < current_strategy.size(); j++) {
+//                std::cout << current_strategy[j] << " ";
+//            }
+//            std::cout << std::endl;
+//
+//            std::vector<double> regrets = information_set->get_regrets();
+//            std::cout << "Regrets:" << std::endl;
+//            for (int j = 0; j < regrets.size(); j++) {
+//                std::cout << regrets[j] << " ";
+//            }
+//            std::cout << std::endl;
+//
+//            std::vector<double> cfv = information_set->get_cfv();
+//            std::cout << "CFV:" << std::endl;
+//            for (int j = 0; j < cfv.size(); j++) {
+//                std::cout << cfv[j] << " ";
+//            }
+//
+//            std::cout << std::endl;
+//        }
     }
 
     ~GPUCFR() {
@@ -619,7 +619,9 @@ public:
         terminal_nodes_size_ = game_tree_.at(game_tree_.size() - 1).size();
     }
 
-    void run_iterations (int iterations)  {
+    void run_iterations (unsigned int iterations)  {
+        memcpy_host_to_gpu();
+
         cudaEvent_t start, stop;
 
         cudaEventCreate(&start);
@@ -638,6 +640,8 @@ public:
 
         cudaEventDestroy(start);
         cudaEventDestroy(stop);
+
+        memcpy_gpu_to_host();
     };
 
     float elapsed_time() {
@@ -701,12 +705,9 @@ int main () {
     /* Goofspiel 2 */
     unsigned int iterations = 1000;
     GPUCFR instance1 = GPUCFR("../gs2.game");
-    instance1.load();
-    instance1.memcpy_host_to_gpu();
     instance1.run_iterations(iterations);
-    instance1.memcpy_gpu_to_host();
     instance1.export_strategy_for_gtlib("gs2.strategy");
-//    std::cout << "1000 iterations takes " << instance1.elapsed_time() << "ms on Goospiel 2" << std::endl;
+    std::cout << "1000 iterations takes " << instance1.elapsed_time() << "ms on Goospiel 2" << std::endl;
 
 //    iterations = 5000;
 //    GPUCFR game_loader2 = GPUCFR("../gs2.game");
