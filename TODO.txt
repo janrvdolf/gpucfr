@@ -1,4 +1,6 @@
 TODO:
 - zjistit card capability to create a grid
 
+- in GTLib put load imported strategy through getAverageStrategy
+
 - make the load, memcpy* private methods
