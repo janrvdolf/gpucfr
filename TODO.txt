@@ -4,3 +4,5 @@ TODO:
 - add doxygen
 
 - delete "GPUCFR::export_strategy_for_gtlib"
+
+- is GPUCFR::loAD
