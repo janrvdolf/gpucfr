@@ -13,7 +13,4 @@ set (SOURCE_FILES
         )
 
 add_executable(gpucfr main.cu ${SOURCE_FILES})
-set_target_properties(
-        gpucfr
-        PROPERTIES
-        CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(gpucfr PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
