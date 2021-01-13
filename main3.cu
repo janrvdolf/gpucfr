@@ -5,22 +5,12 @@
 
 #include "cuda_base.h"
 #include "information_set.h"
+#include "efg_node.h"
 
 
 #define THREADS_PER_BLOCK 32u // THREADS_PER_BLOCK
 
-typedef struct efg_node_t {
-    struct efg_node_t *parent;
 
-    int player;
-    float reach_probability;
-    float value;
-    INFORMATION_SET *information_set; // TODO player should be probably in in INFORMATION_SET
-
-    // children
-    int childs_count;
-    struct efg_node_t **childs;
-} EFGNODE;
 
 __global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int information_set_size) {
     unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
@@ -176,101 +166,101 @@ __global__ void regret_update_kernel(INFORMATION_SET ** dev_infoset_data, unsign
     }
 }
 
-class Node {
-private:
-    Node *parent_ = nullptr;
-    InformationSet *information_set_ = nullptr;
-
-    EFGNODE *   node_t_     = NULL;
-    EFGNODE *   dev_node_t_ = NULL;
-    EFGNODE **  dev_children_ = NULL;
-
-    // gtlib data:
-    size_t   hash_ = 0;
-    unsigned int    number_of_actions_ = 0;
-    unsigned int    player_ = 0;
-    size_t   parent_hash_ = 0;
-    size_t   information_set_hash_ = 0;
-    float           value_ = 0.0;
-public:
-    std::vector<Node*> children;
-
-    Node(Node *parent, InformationSet *information_set) {
-        parent_ = parent;
-        information_set_ = information_set;
-
-        size_t node_t_size = sizeof(EFGNODE);
-        node_t_ = (EFGNODE*) malloc(node_t_size);
-
-        CHECK_ERROR(cudaMalloc((void **) &dev_node_t_, node_t_size));
-    }
-
-    ~Node() {
-        if (node_t_)
-            free(node_t_);
-        if (dev_node_t_)
-            CHECK_ERROR(cudaFree(dev_node_t_));
-        if (dev_children_)
-            CHECK_ERROR(cudaFree(dev_children_));
-    }
-
-    EFGNODE* get_gpu_ptr() {
-        return dev_node_t_;
-    }
-
-    void memcpy_host_to_gpu () {
-            size_t node_t_size = sizeof(EFGNODE);
-
-            if (parent_) {
-                node_t_->parent = parent_->get_gpu_ptr();
-            } else {
-                node_t_->parent = NULL;
-            }
-
-            node_t_->player = player_;
-            node_t_->reach_probability = 0.0;
-            node_t_->value = value_;
-            if (information_set_) {
-                node_t_->information_set = information_set_->get_gpu_ptr();
-            } else {
-                node_t_->information_set = NULL;
-            }
-            node_t_->childs_count = children.size();
-            // node's children
-            size_t node_children_size = node_t_->childs_count * sizeof(EFGNODE**);
-            EFGNODE **node_children = (EFGNODE**) malloc(node_children_size);
-            for (int i = 0; i < children.size(); i++) {
-                node_children[i] = children[i]->get_gpu_ptr();
-            }
-            CHECK_ERROR(cudaMalloc((void **) &dev_children_, node_children_size));
-            CHECK_ERROR(cudaMemcpy(dev_children_, node_children, node_children_size, cudaMemcpyHostToDevice));
-            node_t_->childs = dev_children_;
-            // node to GPU
-//            CHECK_ERROR(cudaMalloc((void **) &dev_node_t_, node_t_size));
-            CHECK_ERROR(cudaMemcpy(dev_node_t_, node_t_, node_t_size, cudaMemcpyHostToDevice));
-//        }
-    }
-
-    void update_gtlib_data(
-            size_t   hash,
-            unsigned int    number_of_actions,
-            unsigned int    player,
-            size_t   parent_hash,
-            size_t   information_set_hash,
-            float           value) {
-        hash_ = hash;
-        number_of_actions_ = number_of_actions;
-        player_ = player;
-        parent_hash_ = parent_hash;
-        information_set_hash_ = information_set_hash;
-        value_ = value;
-    }
-
-    void add_child(Node *child) {
-        children.push_back(child);
-    }
-
-};
+//class Node {
+//private:
+//    Node *parent_ = nullptr;
+//    InformationSet *information_set_ = nullptr;
+//
+//    EFGNODE *   node_t_     = NULL;
+//    EFGNODE *   dev_node_t_ = NULL;
+//    EFGNODE **  dev_children_ = NULL;
+//
+//    // gtlib data:
+//    size_t   hash_ = 0;
+//    unsigned int    number_of_actions_ = 0;
+//    unsigned int    player_ = 0;
+//    size_t   parent_hash_ = 0;
+//    size_t   information_set_hash_ = 0;
+//    float           value_ = 0.0;
+//public:
+//    std::vector<Node*> children;
+//
+//    Node(Node *parent, InformationSet *information_set) {
+//        parent_ = parent;
+//        information_set_ = information_set;
+//
+//        size_t node_t_size = sizeof(EFGNODE);
+//        node_t_ = (EFGNODE*) malloc(node_t_size);
+//
+//        CHECK_ERROR(cudaMalloc((void **) &dev_node_t_, node_t_size));
+//    }
+//
+//    ~Node() {
+//        if (node_t_)
+//            free(node_t_);
+//        if (dev_node_t_)
+//            CHECK_ERROR(cudaFree(dev_node_t_));
+//        if (dev_children_)
+//            CHECK_ERROR(cudaFree(dev_children_));
+//    }
+//
+//    EFGNODE* get_gpu_ptr() {
+//        return dev_node_t_;
+//    }
+//
+//    void memcpy_host_to_gpu () {
+//            size_t node_t_size = sizeof(EFGNODE);
+//
+//            if (parent_) {
+//                node_t_->parent = parent_->get_gpu_ptr();
+//            } else {
+//                node_t_->parent = NULL;
+//            }
+//
+//            node_t_->player = player_;
+//            node_t_->reach_probability = 0.0;
+//            node_t_->value = value_;
+//            if (information_set_) {
+//                node_t_->information_set = information_set_->get_gpu_ptr();
+//            } else {
+//                node_t_->information_set = NULL;
+//            }
+//            node_t_->childs_count = children.size();
+//            // node's children
+//            size_t node_children_size = node_t_->childs_count * sizeof(EFGNODE**);
+//            EFGNODE **node_children = (EFGNODE**) malloc(node_children_size);
+//            for (int i = 0; i < children.size(); i++) {
+//                node_children[i] = children[i]->get_gpu_ptr();
+//            }
+//            CHECK_ERROR(cudaMalloc((void **) &dev_children_, node_children_size));
+//            CHECK_ERROR(cudaMemcpy(dev_children_, node_children, node_children_size, cudaMemcpyHostToDevice));
+//            node_t_->childs = dev_children_;
+//            // node to GPU
+////            CHECK_ERROR(cudaMalloc((void **) &dev_node_t_, node_t_size));
+//            CHECK_ERROR(cudaMemcpy(dev_node_t_, node_t_, node_t_size, cudaMemcpyHostToDevice));
+////        }
+//    }
+//
+//    void update_gtlib_data(
+//            size_t   hash,
+//            unsigned int    number_of_actions,
+//            unsigned int    player,
+//            size_t   parent_hash,
+//            size_t   information_set_hash,
+//            float           value) {
+//        hash_ = hash;
+//        number_of_actions_ = number_of_actions;
+//        player_ = player;
+//        parent_hash_ = parent_hash;
+//        information_set_hash_ = information_set_hash;
+//        value_ = value;
+//    }
+//
+//    void add_child(Node *child) {
+//        children.push_back(child);
+//    }
+//
+//};
 
 
 class GPUCFR {

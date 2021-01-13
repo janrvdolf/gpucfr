@@ -1,7 +1,10 @@
 #ifndef CUDA_BASE_H_
 #define CUDA_BASE_H_
+#include <iostream>
+
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
+
 
 /* SOURCE
  * The following code adopted from Ing. Jaroslav Sloup.
