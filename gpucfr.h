@@ -11,6 +11,9 @@
 
 #define THREADS_PER_BLOCK 32u // THREADS_PER_BLOCK
 
+/*!
+ This class implements the Counterfactual regret minimization (CFR) algorithm in C++/C/CUDA for GPU. More specifically, the original Vanilla CFR by Martin Zinkevich.
+ * */
 class GPUCFR {
 private:
     std::unordered_map<size_t, Node*> node_hash2node_ptr_;
@@ -32,6 +35,9 @@ private:
 
     float elapsed_time_ = 0.0;
 
+    std::string path_;
+    std::vector<std::vector<Node*>> game_tree_;
+
     unsigned int compute_blocks_number(int size);
 
     void memcpy_host_to_gpu();
@@ -43,9 +49,11 @@ private:
     void load();
 
 public:
-    std::string path_;
-    std::vector<std::vector<Node*>> game_tree_;
-
+    //! Constructor for GPUCFR class
+    /*!
+     *
+     * @param path Path to an EFG file "*.game" exported from GTLib
+     */
     GPUCFR(std::string path);
 
     ~GPUCFR();
