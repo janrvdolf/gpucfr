@@ -49,17 +49,23 @@ private:
     void load();
 
 public:
-    //! Constructor for GPUCFR class
+    //!
     /*!
-     *
-     * @param path Path to an EFG file "*.game" exported from GTLib
+     * Constructor for GPUCFR class. The constructor loads exported game and construct the representation for GPU.
+     * @param path Path to an EFG file *.game exported from GTLib.
      */
     GPUCFR(std::string path);
 
     ~GPUCFR();
-
+    /*!
+     * The main method of the GPUCFR class. Runs iterations of CFR algorithm.
+     * @param iterations An integer for how many iterations GPUCFR should run.
+     */
     void run_iterations (unsigned int iterations);
-
+    /*!
+     * Measures the time executed of GPUCFR::run_iterations method on GPU.
+     * @return Time it took in milliseconds to execute all iterations on GPU.
+     */
     float elapsed_time();
 
 };
