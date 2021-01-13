@@ -154,248 +154,209 @@ __global__ void regret_update_kernel(INFORMATION_SET ** dev_infoset_data, unsign
     }
 }
 
-    unsigned int GPUCFR::compute_blocks_number(int size) {
-        unsigned int padded = std::ceil((float)size/THREADS_PER_BLOCK)*THREADS_PER_BLOCK;
-        return padded/THREADS_PER_BLOCK;
-    }
+unsigned int GPUCFR::compute_blocks_number(int size) {
+    unsigned int padded = std::ceil((float)size/THREADS_PER_BLOCK)*THREADS_PER_BLOCK;
+    return padded/THREADS_PER_BLOCK;
+}
 
 GPUCFR::GPUCFR(std::string path) {
-        path_ = path;
+    path_ = path;
 
-        load();
+    load();
+}
+
+void GPUCFR::memcpy_host_to_gpu() {
+    // information sets
+    for (auto information_set: information_sets_) {
+        information_set->memcpy_host_to_gpu();
     }
-
-    void GPUCFR::memcpy_host_to_gpu() {
-        // information sets
-        for (auto information_set: information_sets_) {
-            information_set->memcpy_host_to_gpu();
+    // nodes
+    for (const auto &nodes_vec: game_tree_) {
+        for (auto node: nodes_vec) {
+            node->memcpy_host_to_gpu();
         }
-        // nodes
-        for (const auto &nodes_vec: game_tree_) {
-            for (auto node: nodes_vec) {
-                node->memcpy_host_to_gpu();
-            }
-        }
-        // terminal nodes
-        unsigned int terminal_nodes_size = terminal_nodes_size_;
-        size_t terminal_nodes_ptr_size = sizeof(EFGNODE**) * terminal_nodes_size;
-        terminal_nodes_ = (EFGNODE**) malloc(terminal_nodes_ptr_size);
-        unsigned int cnt = 0;
-        for (auto node: game_tree_.at(game_tree_.size() - 1)) {
-            terminal_nodes_[cnt++] = node->get_gpu_ptr();
-        }
-        CHECK_ERROR(cudaMalloc((void **) &dev_terminal_nodes_, terminal_nodes_ptr_size));
-        CHECK_ERROR(cudaMemcpy(dev_terminal_nodes_, terminal_nodes_, terminal_nodes_ptr_size, cudaMemcpyHostToDevice));
-        // information sets array
-        size_t information_sets_size = sizeof(INFORMATION_SET**) * information_sets_.size();
-        information_sets_t_ = (INFORMATION_SET**) malloc(information_sets_size);
-        for (int i = 0; i < information_sets_.size(); i++) {
-            information_sets_t_[i] = information_sets_.at(i)->get_gpu_ptr();
-        }
-        CHECK_ERROR(cudaMalloc((void **) &dev_informations_sets_, information_sets_size));
-        CHECK_ERROR(cudaMemcpy(dev_informations_sets_, information_sets_t_, information_sets_size, cudaMemcpyHostToDevice));
-        // nodes into an array
-        size_t nodes_size = sizeof(EFGNODE**) * nodes_size_;
-        nodes_ = (EFGNODE**) malloc(nodes_size);
-        cnt = 0;
-        for (const auto &nodes_per_depth: game_tree_) {
-            for (auto node: nodes_per_depth) {
-                nodes_[cnt++] = node->get_gpu_ptr();
-            }
-        }
-        CHECK_ERROR(cudaMalloc((void **) &dev_nodes_, nodes_size));
-        CHECK_ERROR(cudaMemcpy(dev_nodes_, nodes_, nodes_size, cudaMemcpyHostToDevice));
     }
-
-    void GPUCFR::memcpy_gpu_to_host () {
-        // just information sets, because I need average strategy
-        for (auto information_set: information_sets_) {
-            information_set->memcpy_gpu_to_host();
-        }
-
-//        for (auto information_set: information_sets_) {
-//            std::cout << "-- IS " << information_set->get_hash() << std::endl;
-//
-//            std::cout << "Reach probability:" << std::endl;
-//            std::cout << information_set->get_reach_probability() << std::endl;
-//
-//            std::vector<double> average_strategy = information_set->get_average_strategy();
-//            //std::cout << information_set->get_hash() << " - size " << strategy.size() << std::endl;
-//
-//
-//            std::cout << "Average strategy:" << std::endl;
-//            for (int j = 0; j < average_strategy.size(); j++) {
-//                std::cout << average_strategy[j] << " ";
-//            }
-//            std::cout << std::endl;
-//
-//            std::vector<double> current_strategy = information_set->get_current_strategy();
-//            std::cout << "Current strategy:" << std::endl;
-//            for (int j = 0; j < current_strategy.size(); j++) {
-//                std::cout << current_strategy[j] << " ";
-//            }
-//            std::cout << std::endl;
-//
-//            std::vector<double> regrets = information_set->get_regrets();
-//            std::cout << "Regrets:" << std::endl;
-//            for (int j = 0; j < regrets.size(); j++) {
-//                std::cout << regrets[j] << " ";
-//            }
-//            std::cout << std::endl;
-//
-//            std::vector<double> cfv = information_set->get_cfv();
-//            std::cout << "CFV:" << std::endl;
-//            for (int j = 0; j < cfv.size(); j++) {
-//                std::cout << cfv[j] << " ";
-//            }
-//
-//            std::cout << std::endl;
-//        }
+    // terminal nodes
+    unsigned int terminal_nodes_size = terminal_nodes_size_;
+    size_t terminal_nodes_ptr_size = sizeof(EFGNODE**) * terminal_nodes_size;
+    terminal_nodes_ = (EFGNODE**) malloc(terminal_nodes_ptr_size);
+    unsigned int cnt = 0;
+    for (auto node: game_tree_.at(game_tree_.size() - 1)) {
+        terminal_nodes_[cnt++] = node->get_gpu_ptr();
     }
+    CHECK_ERROR(cudaMalloc((void **) &dev_terminal_nodes_, terminal_nodes_ptr_size));
+    CHECK_ERROR(cudaMemcpy(dev_terminal_nodes_, terminal_nodes_, terminal_nodes_ptr_size, cudaMemcpyHostToDevice));
+    // information sets array
+    size_t information_sets_size = sizeof(INFORMATION_SET**) * information_sets_.size();
+    information_sets_t_ = (INFORMATION_SET**) malloc(information_sets_size);
+    for (int i = 0; i < information_sets_.size(); i++) {
+        information_sets_t_[i] = information_sets_.at(i)->get_gpu_ptr();
+    }
+    CHECK_ERROR(cudaMalloc((void **) &dev_informations_sets_, information_sets_size));
+    CHECK_ERROR(cudaMemcpy(dev_informations_sets_, information_sets_t_, information_sets_size, cudaMemcpyHostToDevice));
+    // nodes into an array
+    size_t nodes_size = sizeof(EFGNODE**) * nodes_size_;
+    nodes_ = (EFGNODE**) malloc(nodes_size);
+    cnt = 0;
+    for (const auto &nodes_per_depth: game_tree_) {
+        for (auto node: nodes_per_depth) {
+            nodes_[cnt++] = node->get_gpu_ptr();
+        }
+    }
+    CHECK_ERROR(cudaMalloc((void **) &dev_nodes_, nodes_size));
+    CHECK_ERROR(cudaMemcpy(dev_nodes_, nodes_, nodes_size, cudaMemcpyHostToDevice));
+}
+
+void GPUCFR::memcpy_gpu_to_host () {
+    // just information sets, because I need average strategy
+    for (auto information_set: information_sets_) {
+        information_set->memcpy_gpu_to_host();
+    }
+}
 
 GPUCFR::~GPUCFR() {
-        // free nodes
-        for (const auto &nodes_vec: game_tree_) {
-            for (auto node: nodes_vec) {
-                delete node;
+    // free nodes
+    for (const auto &nodes_vec: game_tree_) {
+        for (auto node: nodes_vec) {
+            delete node;
+        }
+    }
+    // free information sets
+    for (InformationSet *information_set: information_sets_) {
+        delete information_set;
+    }
+
+    free(terminal_nodes_);
+    CHECK_ERROR(cudaFree(dev_terminal_nodes_));
+
+    free(information_sets_t_);
+    CHECK_ERROR(cudaFree(dev_informations_sets_));
+
+    free(nodes_);
+    CHECK_ERROR(cudaFree(dev_nodes_));
+}
+
+void GPUCFR::load() {
+    unsigned int max_depth = 0;
+
+    std::ifstream input_file(path_);
+    input_file >> max_depth;
+    // loop through depths
+    for (int i = 0; i < max_depth; i++) {
+        unsigned int nodes_cnt = 0;
+        std::vector<Node*> tmp_nodes_vec;
+        input_file >> nodes_cnt;
+        for (int j = 0; j < nodes_cnt; j++) {
+            size_t node_hash = 0;
+            unsigned int node_number_of_actions = 0;
+            unsigned int node_player = 0;
+            size_t node_parent_hash = 0;
+            float node_value = 0.0;
+            size_t information_set_hash = 0;
+
+            input_file >> node_hash;
+            input_file >> node_number_of_actions;
+            input_file >> node_player;
+            input_file >> node_parent_hash;
+            input_file >> node_value;
+            input_file >> information_set_hash;
+
+            Node *node_parent = nullptr;
+            if (node_parent_hash) {
+                auto result_node_parent = node_hash2node_ptr_.find(node_parent_hash);
+                if (result_node_parent != node_hash2node_ptr_.end()) {
+                    node_parent = result_node_parent->second;
+                }
             }
-        }
-        // free information sets
-        for (InformationSet *information_set: information_sets_) {
-            delete information_set;
-        }
 
-        free(terminal_nodes_);
-        CHECK_ERROR(cudaFree(dev_terminal_nodes_));
+            InformationSet *is = nullptr;
+            if (information_set_hash) {
+                auto result_is = is_hash2is_ptr_.find(information_set_hash);
+                if (result_is != is_hash2is_ptr_.end()) {
+                    is = result_is->second;
+                } else {
+                    is = new InformationSet(information_set_hash, node_number_of_actions);
 
-        free(information_sets_t_);
-        CHECK_ERROR(cudaFree(dev_informations_sets_));
+                    is_hash2is_ptr_.emplace(std::make_pair(information_set_hash, is));
 
-        free(nodes_);
-        CHECK_ERROR(cudaFree(dev_nodes_));
-    }
-
-    void GPUCFR::load() {
-        unsigned int max_depth = 0;
-
-        std::ifstream input_file(path_);
-        input_file >> max_depth;
-        // loop through depths
-        for (int i = 0; i < max_depth; i++) {
-            unsigned int nodes_cnt = 0;
-            std::vector<Node*> tmp_nodes_vec;
-            input_file >> nodes_cnt;
-            for (int j = 0; j < nodes_cnt; j++) {
-                size_t node_hash = 0;
-                unsigned int node_number_of_actions = 0;
-                unsigned int node_player = 0;
-                size_t node_parent_hash = 0;
-                float node_value = 0.0;
-                size_t information_set_hash = 0;
-
-                input_file >> node_hash;
-                input_file >> node_number_of_actions;
-                input_file >> node_player;
-                input_file >> node_parent_hash;
-                input_file >> node_value;
-                input_file >> information_set_hash;
-
-                Node *node_parent = nullptr;
-                if (node_parent_hash) {
-                    auto result_node_parent = node_hash2node_ptr_.find(node_parent_hash);
-                    if (result_node_parent != node_hash2node_ptr_.end()) {
-                        node_parent = result_node_parent->second;
-                    }
+                    information_sets_.push_back(is);
                 }
-
-                InformationSet *is = nullptr;
-                if (information_set_hash) {
-                    auto result_is = is_hash2is_ptr_.find(information_set_hash);
-                    if (result_is != is_hash2is_ptr_.end()) {
-                        is = result_is->second;
-                    } else {
-                        is = new InformationSet(information_set_hash, node_number_of_actions);
-
-                        is_hash2is_ptr_.emplace(std::make_pair(information_set_hash, is));
-
-                        information_sets_.push_back(is);
-                    }
-                }
-
-                Node *node = new Node(node_parent, is);
-                node->update_gtlib_data(node_hash, node_number_of_actions, node_player, node_parent_hash, information_set_hash, node_value);
-
-                node_hash2node_ptr_.emplace(std::make_pair(node_hash, node));
-
-                nodes_size_++;
-
-                if (node_parent) {
-                    node_parent->add_child(node);
-                }
-
-                tmp_nodes_vec.push_back(node);
             }
-            game_tree_.push_back(tmp_nodes_vec);
+
+            Node *node = new Node(node_parent, is);
+            node->update_gtlib_data(node_hash, node_number_of_actions, node_player, node_parent_hash, information_set_hash, node_value);
+
+            node_hash2node_ptr_.emplace(std::make_pair(node_hash, node));
+
+            nodes_size_++;
+
+            if (node_parent) {
+                node_parent->add_child(node);
+            }
+
+            tmp_nodes_vec.push_back(node);
         }
-        input_file.close();
-
-        terminal_nodes_size_ = game_tree_.at(game_tree_.size() - 1).size();
+        game_tree_.push_back(tmp_nodes_vec);
     }
+    input_file.close();
 
-    void GPUCFR::run_iterations (unsigned int iterations)  {
-        memcpy_host_to_gpu();
+    terminal_nodes_size_ = game_tree_.at(game_tree_.size() - 1).size();
+}
 
-        cudaEvent_t start, stop;
+void GPUCFR::run_iterations (unsigned int iterations)  {
+    memcpy_host_to_gpu();
 
-        cudaEventCreate(&start);
-        cudaEventCreate(&stop);
+    cudaEvent_t start, stop;
 
-        cudaEventRecord(start, 0);
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
 
-        for (int i = 1; i < iterations; i++) {
-            run_iteration((float ) i);
-        }
-        cudaEventRecord(stop, 0);
-        cudaEventSynchronize(stop);
+    cudaEventRecord(start, 0);
 
-
-        cudaEventElapsedTime(&elapsed_time_, start, stop);
-
-        cudaEventDestroy(start);
-        cudaEventDestroy(stop);
-
-        memcpy_gpu_to_host();
-    };
-
-    float GPUCFR::elapsed_time() {
-        return elapsed_time_;
+    for (int i = 1; i < iterations; i++) {
+        run_iteration((float ) i);
     }
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
 
-    void GPUCFR::run_iteration(float iteration) {
-        // Regret matching
-        unsigned int data_size = information_sets_.size();
-        int blocks = compute_blocks_number(data_size);
-        rm_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_informations_sets_, data_size);
-        cudaDeviceSynchronize();
-        // Reach probabilities
-        data_size = nodes_size_ - terminal_nodes_size_;
-        blocks = compute_blocks_number(data_size);
-        rp_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_nodes_, data_size);
-        cudaDeviceSynchronize();
-        // Average strategies
-        data_size = information_sets_.size();
-        blocks = compute_blocks_number(information_sets_.size());
-        average_strategy_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_informations_sets_, data_size, iteration);
-        cudaDeviceSynchronize();
-        // Counterfactual values
-        data_size = terminal_nodes_size_;
-        blocks = compute_blocks_number(data_size);
-        cfv_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_terminal_nodes_, data_size);
-        cudaDeviceSynchronize();
-        // Regrets
-        data_size = information_sets_.size();
-        blocks = compute_blocks_number(data_size);
-        regret_update_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_informations_sets_, data_size);
-        cudaDeviceSynchronize();
-    }
+
+    cudaEventElapsedTime(&elapsed_time_, start, stop);
+
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+
+    memcpy_gpu_to_host();
+};
+
+float GPUCFR::elapsed_time() {
+    return elapsed_time_;
+}
+
+void GPUCFR::run_iteration(float iteration) {
+    // Regret matching
+    unsigned int data_size = information_sets_.size();
+    int blocks = compute_blocks_number(data_size);
+    rm_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_informations_sets_, data_size);
+    cudaDeviceSynchronize();
+    // Reach probabilities
+    data_size = nodes_size_ - terminal_nodes_size_;
+    blocks = compute_blocks_number(data_size);
+    rp_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_nodes_, data_size);
+    cudaDeviceSynchronize();
+    // Average strategies
+    data_size = information_sets_.size();
+    blocks = compute_blocks_number(information_sets_.size());
+    average_strategy_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_informations_sets_, data_size, iteration);
+    cudaDeviceSynchronize();
+    // Counterfactual values
+    data_size = terminal_nodes_size_;
+    blocks = compute_blocks_number(data_size);
+    cfv_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_terminal_nodes_, data_size);
+    cudaDeviceSynchronize();
+    // Regrets
+    data_size = information_sets_.size();
+    blocks = compute_blocks_number(data_size);
+    regret_update_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_informations_sets_, data_size);
+    cudaDeviceSynchronize();
+}
 

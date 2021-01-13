@@ -49,7 +49,7 @@ private:
     void load();
 
 public:
-    //!
+    //! Short description
     /*!
      * Constructor for GPUCFR class. The constructor loads exported game and construct the representation for GPU.
      * @param path Path to an EFG file *.game exported from GTLib.
