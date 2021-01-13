@@ -40,6 +40,8 @@ private:
 
     void run_iteration(float iteration);
 
+    void load();
+
 public:
     std::string path_;
     std::vector<std::vector<Node*>> game_tree_;
@@ -47,8 +49,6 @@ public:
     GPUCFR(std::string path);
 
     ~GPUCFR();
-
-    void load();
 
     void run_iterations (unsigned int iterations);
 
