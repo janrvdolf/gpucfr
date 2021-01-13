@@ -3,7 +3,11 @@
 #include <unordered_map>
 #include <fstream>
 
+#include "cuda_base.h"
 #include "information_set.h"
+
+
+#define THREADS_PER_BLOCK 32u // THREADS_PER_BLOCK
 
 typedef struct efg_node_t {
     struct efg_node_t *parent;

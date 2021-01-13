@@ -3,24 +3,7 @@
 #include <iostream>
 #include <vector>
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
-// Simple function to check for CUDA runtime errors.
-static void handleCUDAError(
-        cudaError_t error,		// error code
-        const char *file,		// file within error was generated
-        int line )			// line where error occurs
-{
-    if (error != cudaSuccess) {	// any error -> display error message and terminate application
-        printf( "%s in %s at line %d\n", cudaGetErrorString( error ), file, line );
-        exit( EXIT_FAILURE );
-    }
-}
-
-#define THREADS_PER_BLOCK 32u // THREADS_PER_BLOCK
-
-#define CHECK_ERROR( error ) ( handleCUDAError( error, __FILE__, __LINE__ ) )
+#include "cuda_base.h"
 
 
 typedef float INFORMATION_SET;

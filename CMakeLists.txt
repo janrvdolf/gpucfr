@@ -20,6 +20,7 @@ set(CMAKE_CUDA_STANDARD 14)
 include_directories(${PROJECT_SOURCE_DIR})
 
 set (SOURCE_FILES
+        cuda_base.cpp
         information_set.cu
         )
 
