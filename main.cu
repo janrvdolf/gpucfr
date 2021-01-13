@@ -8,7 +8,6 @@ int main () {
     unsigned int iterations = 1000;
     GPUCFR instance1 = GPUCFR("../gs2.game");
     instance1.run_iterations(iterations);
-    instance1.export_strategy_for_gtlib("gs2.strategy"); // TODO
     std::cout << "1000 iterations takes " << instance1.elapsed_time() << "ms on Goospiel 2" << std::endl;
 
     iterations = 5000;
