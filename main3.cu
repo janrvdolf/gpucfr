@@ -3,26 +3,9 @@
 #include <unordered_map>
 #include <fstream>
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
+#include "information_set.h"
 
-// Simple function to check for CUDA runtime errors.
-static void handleCUDAError(
-        cudaError_t error,		// error code
-        const char *file,		// file within error was generated
-        int line )			// line where error occurs
-{
-    if (error != cudaSuccess) {	// any error -> display error message and terminate application
-        printf( "%s in %s at line %d\n", cudaGetErrorString( error ), file, line );
-        exit( EXIT_FAILURE );
-    }
-}
-
-#define THREADS_PER_BLOCK 32u // THREADS_PER_BLOCK
-
-#define CHECK_ERROR( error ) ( handleCUDAError( error, __FILE__, __LINE__ ) )
-
-typedef float INFORMATION_SET;
+//typedef float INFORMATION_SET;
 
 typedef struct efg_node_t {
     struct efg_node_t *parent;
@@ -192,121 +175,121 @@ __global__ void regret_update_kernel(INFORMATION_SET ** dev_infoset_data, unsign
 }
 
 
-class InformationSet {
-private:
-    size_t hash_t_ = 0;
-    unsigned int number_of_actions_ = 0;
-
-    size_t information_set_t_size_ = 0;
-    INFORMATION_SET* information_set_t_ = NULL;
-
-    INFORMATION_SET* dev_information_set_t_ = NULL;
-
-    void init_(){
-        // init the number of actions
-        information_set_t_[0] = number_of_actions_;
-        information_set_t_[1] = 0.0; // infoset reach probability
-        unsigned int offset = 2;
-        // init current_strategy
-        for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
-            information_set_t_[i] = 0;
-        }
-        offset += number_of_actions_;
-        // init average strategy
-        for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
-            information_set_t_[i] = 0;
-        }
-        offset += number_of_actions_;
-        // init counterfactual values
-        for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
-            information_set_t_[i] = 0;
-        }
-        offset += number_of_actions_;
-        // init regrets
-        for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
-            information_set_t_[i] = 0;
-        }
-    }
-
-public:
-    InformationSet(size_t hash, unsigned number_of_actions) {
-        hash_t_ = hash;
-        number_of_actions_ = number_of_actions;
-
-        information_set_t_size_ = (4 * number_of_actions_ + 2) * sizeof(INFORMATION_SET);
-        information_set_t_ = (INFORMATION_SET*) malloc(information_set_t_size_);
-
-        init_();
-
-        CHECK_ERROR(cudaMalloc((void **) &dev_information_set_t_, information_set_t_size_));
-    }
-
-    void memcpy_host_to_gpu () {
-        // copy data from CPU's RAM to GPU's global memory
-        CHECK_ERROR(cudaMemcpy(dev_information_set_t_, information_set_t_, information_set_t_size_, cudaMemcpyHostToDevice));
-    }
-
-    void memcpy_gpu_to_host () {
-        // copy data from GPU's global memory to CPU's RAM
-        CHECK_ERROR(cudaMemcpy(information_set_t_, dev_information_set_t_, information_set_t_size_, cudaMemcpyDeviceToHost));
-    }
-
-    INFORMATION_SET* get_gpu_ptr() {
-        return dev_information_set_t_;
-    }
-
-    size_t get_hash() {
-        return hash_t_;
-    }
-
-    std::vector<double> get_current_strategy() {
-        std::vector<double> returning_strategy;
-        int offset = 2;
-        for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
-            returning_strategy.push_back(information_set_t_[i]);
-        }
-        return returning_strategy;
-    }
-
-    std::vector<double> get_regrets() {
-        std::vector<double> returning_strategy;
-        int offset = 2+3*number_of_actions_;
-        for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
-            returning_strategy.push_back(information_set_t_[i]);
-        }
-        return returning_strategy;
-    }
-
-    std::vector<double> get_cfv() {
-        std::vector<double> returning_strategy;
-        int offset = 2+2*number_of_actions_;
-        for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
-            returning_strategy.push_back(information_set_t_[i]);
-        }
-        return returning_strategy;
-    }
-
-    float get_reach_probability () {
-        return information_set_t_[1];
-    }
-
-    std::vector<double> get_average_strategy() {
-        std::vector<double> returning_strategy;
-        unsigned int offset = 2 + number_of_actions_;
-        for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
-            returning_strategy.push_back(information_set_t_[i]);
-        }
-        return returning_strategy;
-    }
-
-    ~InformationSet() {
-        free(information_set_t_);
-        information_set_t_ = NULL;
-
-        CHECK_ERROR(cudaFree(dev_information_set_t_));
-        dev_information_set_t_ = NULL;
-    }
-};
+//class InformationSet {
+//private:
+//    size_t hash_t_ = 0;
+//    unsigned int number_of_actions_ = 0;
+//
+//    size_t information_set_t_size_ = 0;
+//    INFORMATION_SET* information_set_t_ = NULL;
+//
+//    INFORMATION_SET* dev_information_set_t_ = NULL;
+//
+//    void init_(){
+//        // init the number of actions
+//        information_set_t_[0] = number_of_actions_;
+//        information_set_t_[1] = 0.0; // infoset reach probability
+//        unsigned int offset = 2;
+//        // init current_strategy
+//        for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
+//            information_set_t_[i] = 0;
+//        }
+//        offset += number_of_actions_;
+//        // init average strategy
+//        for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
+//            information_set_t_[i] = 0;
+//        }
+//        offset += number_of_actions_;
+//        // init counterfactual values
+//        for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
+//            information_set_t_[i] = 0;
+//        }
+//        offset += number_of_actions_;
+//        // init regrets
+//        for (unsigned int i = offset; i < number_of_actions_ + offset; i++) {
+//            information_set_t_[i] = 0;
+//        }
+//    }
+//
+//public:
+//    InformationSet(size_t hash, unsigned number_of_actions) {
+//        hash_t_ = hash;
+//        number_of_actions_ = number_of_actions;
+//
+//        information_set_t_size_ = (4 * number_of_actions_ + 2) * sizeof(INFORMATION_SET);
+//        information_set_t_ = (INFORMATION_SET*) malloc(information_set_t_size_);
+//
+//        init_();
+//
+//        CHECK_ERROR(cudaMalloc((void **) &dev_information_set_t_, information_set_t_size_));
+//    }
+//
+//    void memcpy_host_to_gpu () {
+//        // copy data from CPU's RAM to GPU's global memory
+//        CHECK_ERROR(cudaMemcpy(dev_information_set_t_, information_set_t_, information_set_t_size_, cudaMemcpyHostToDevice));
+//    }
+//
+//    void memcpy_gpu_to_host () {
+//        // copy data from GPU's global memory to CPU's RAM
+//        CHECK_ERROR(cudaMemcpy(information_set_t_, dev_information_set_t_, information_set_t_size_, cudaMemcpyDeviceToHost));
+//    }
+//
+//    INFORMATION_SET* get_gpu_ptr() {
+//        return dev_information_set_t_;
+//    }
+//
+//    size_t get_hash() {
+//        return hash_t_;
+//    }
+//
+//    std::vector<double> get_current_strategy() {
+//        std::vector<double> returning_strategy;
+//        int offset = 2;
+//        for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
+//            returning_strategy.push_back(information_set_t_[i]);
+//        }
+//        return returning_strategy;
+//    }
+//
+//    std::vector<double> get_regrets() {
+//        std::vector<double> returning_strategy;
+//        int offset = 2+3*number_of_actions_;
+//        for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
+//            returning_strategy.push_back(information_set_t_[i]);
+//        }
+//        return returning_strategy;
+//    }
+//
+//    std::vector<double> get_cfv() {
+//        std::vector<double> returning_strategy;
+//        int offset = 2+2*number_of_actions_;
+//        for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
+//            returning_strategy.push_back(information_set_t_[i]);
+//        }
+//        return returning_strategy;
+//    }
+//
+//    float get_reach_probability () {
+//        return information_set_t_[1];
+//    }
+//
+//    std::vector<double> get_average_strategy() {
+//        std::vector<double> returning_strategy;
+//        unsigned int offset = 2 + number_of_actions_;
+//        for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
+//            returning_strategy.push_back(information_set_t_[i]);
+//        }
+//        return returning_strategy;
+//    }
+//
+//    ~InformationSet() {
+//        free(information_set_t_);
+//        information_set_t_ = NULL;
+//
+//        CHECK_ERROR(cudaFree(dev_information_set_t_));
+//        dev_information_set_t_ = NULL;
+//    }
+//};
 
 
 class Node {
