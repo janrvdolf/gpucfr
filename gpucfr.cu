@@ -399,19 +399,3 @@ GPUCFR::~GPUCFR() {
         cudaDeviceSynchronize();
     }
 
-    bool GPUCFR::export_strategy_for_gtlib (std::string path) {
-        // export average strategy
-        std::ofstream output(path);
-        output << information_sets_.size() << std::endl;
-        for (auto information_set: information_sets_) {
-            auto            average_strategy       = information_set->get_average_strategy();
-            unsigned int    average_strategy_size  = average_strategy.size();
-            output << information_set->get_hash()   << std::endl;
-            output << average_strategy_size         << std::endl;
-            for (int i = 0; i < average_strategy_size; i++) {
-                output << average_strategy[i] << std::endl;
-            }
-        }
-        output.close();
-        return true;
-    }

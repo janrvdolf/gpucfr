@@ -62,8 +62,6 @@ public:
 
     float elapsed_time();
 
-    bool export_strategy_for_gtlib (std::string path);
-
 };
 
 #endif // GPUCFR_H_
