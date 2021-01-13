@@ -23,6 +23,7 @@ set (SOURCE_FILES
         cuda_base.cpp
         information_set.cu
         efg_node.cu
+        gpucfr.cu
         )
 
 add_executable(gpucfr3 main3.cu ${SOURCE_FILES})
