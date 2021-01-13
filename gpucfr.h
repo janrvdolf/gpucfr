@@ -34,15 +34,17 @@ private:
 
     unsigned int compute_blocks_number(int size);
 
+    void memcpy_host_to_gpu();
+
+    void memcpy_gpu_to_host ();
+
+    void run_iteration(float iteration);
+
 public:
     std::string path_;
     std::vector<std::vector<Node*>> game_tree_;
 
     GPUCFR(std::string path);
-
-    void memcpy_host_to_gpu();
-
-    void memcpy_gpu_to_host ();
 
     ~GPUCFR();
 
@@ -51,8 +53,6 @@ public:
     void run_iterations (unsigned int iterations);
 
     float elapsed_time();
-
-    void run_iteration(float iteration);
 
     bool export_strategy_for_gtlib (std::string path);
 
