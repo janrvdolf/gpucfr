@@ -1,3 +1,14 @@
+//----------------------------------------------------------------------------------------
+/*!
+ * \file       efg_node.h
+ * \author     Jan Rudolf
+ * \date       2021/01/14
+ * \brief      EFG node representations.
+ *
+ *  The file contains a struct efg_node_t and Node class. Both are representing EFG node from EFG formalism.
+ *
+*/
+//----------------------------------------------------------------------------------------
 #ifndef EFG_NODE_H_
 #define EFG_NODE_H_
 #include <vector>

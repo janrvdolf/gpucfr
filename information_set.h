@@ -1,3 +1,14 @@
+//----------------------------------------------------------------------------------------
+/*!
+ * \file       gpucfr.h
+ * \author     Jan Rudolf
+ * \date       2021/01/14
+ * \brief      Information set from EFG formalism.
+ *
+ *  Class implementing an information set from EFG formalism. The file contains INFORMATION_SET (dev) type and  InformationSet (host) class.
+ *
+*/
+//----------------------------------------------------------------------------------------
 #ifndef INFORMATION_SET_H_
 #define INFORMATION_SET_H_
 #include <iostream>

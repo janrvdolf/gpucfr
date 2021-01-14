@@ -1,3 +1,14 @@
+//----------------------------------------------------------------------------------------
+/*!
+ * \file       cuda_base.h
+ * \author     Jan Rudolf
+ * \date       2021/01/14
+ * \brief      Import CUDA related header files and useful utils.
+ *
+ *  Import CUDA related header files and useful utils.
+ *
+*/
+//----------------------------------------------------------------------------------------
 #ifndef CUDA_BASE_H_
 #define CUDA_BASE_H_
 #include <iostream>
@@ -23,6 +34,7 @@ static void handleCUDAError(
     }
 }
 
+//! Macro for catching CUDA error.
 #define CHECK_ERROR( error ) ( handleCUDAError( error, __FILE__, __LINE__ ) )
 
 #endif // CUDA_BASE_H_

@@ -1,3 +1,14 @@
+//----------------------------------------------------------------------------------------
+/*!
+ * \file       gpucfr.h
+ * \author     Jan Rudolf
+ * \date       2021/01/14
+ * \brief      GPU CFR in CUDA
+ *
+ *  Class implementing CFR on CUDA GPU.
+ *
+*/
+//----------------------------------------------------------------------------------------
 #ifndef GPUCFR_H_
 #define GPUCFR_H_
 #include <iostream>
@@ -9,6 +20,7 @@
 #include "information_set.h"
 #include "efg_node.h"
 
+//! Define threads per block.
 #define THREADS_PER_BLOCK 32u // THREADS_PER_BLOCK
 
 //! Class represents CFR implementation on GPU.
