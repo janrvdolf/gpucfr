@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------
 /*!
- * \file       gpucfr.h
+ * \file       information_set.h
  * \author     Jan Rudolf
  * \date       2021/01/14
  * \brief      Information set from EFG formalism.
