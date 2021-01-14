@@ -7,16 +7,16 @@
 
 
 typedef struct efg_node_t {
-    struct efg_node_t *parent;
+    struct efg_node_t *parent;             ///< parent
 
-    int player;
-    float reach_probability;
-    float value;
-    INFORMATION_SET *information_set;
+    int player;                            ///< player
+    float reach_probability;               ///< reach probability
+    float value;                           ///< value
+    INFORMATION_SET *information_set;      ///< information_set
 
     // children
-    int childs_count;
-    struct efg_node_t **childs;
+    int childs_count;                      ///< childs_count
+    struct efg_node_t **childs;            ///< childs
 } EFGNODE;
 
 class Node {
@@ -35,17 +35,42 @@ private:
     size_t   parent_hash_ = 0;
     size_t   information_set_hash_ = 0;
     float           value_ = 0.0;
-public:
-    std::vector<Node*> children;
 
+    std::vector<Node*> children;
+public:
+
+    //! Constructor for an EFG node.
+    /*!
+     * Construction for an EFG node represents a building block for a game tree.
+     * @param parent A link for a parent EFG node.
+     * @param information_set A link to the information set the EFG node is in.
+     */
     Node(Node *parent, InformationSet *information_set);
 
     ~Node();
 
+    //! Returns a pointer of EFGNODE on GPU.
+    /*!
+     * Return a pointer of the struct EFGNODE allocated on GPU corresponding to the class instance.
+     */
     EFGNODE* get_gpu_ptr();
 
+    //! Copies the node from the host to the GPU.
+    /*!
+     * Allocates memory and copies the data to the GPU. On GPU, the class is represented by EFGNODE.
+     */
     void memcpy_host_to_gpu ();
 
+    //! Assign data exported from GTLib that corresponds to this EFG NODE.
+    /*!
+     *
+     * @param hash Unique hash of the node from GTLib.
+     * @param number_of_actions Number of actions that are available in this node.
+     * @param player Which player is the decision maker in this node.
+     * @param parent_hash Unique hash of the parent node from GTLib.
+     * @param information_set_hash Unique hash of information set where the node belongs.
+     * @param value If the node is a terminal node, values is an utility for player 1. Zero otherwise.
+     */
     void update_gtlib_data(
             size_t   hash,
             unsigned int    number_of_actions,
@@ -54,6 +79,11 @@ public:
             size_t   information_set_hash,
             float           value);
 
+    //! Adds a child to the children of the node.
+    /*!
+     *
+     * @param child A pointer to the child node.
+     */
     void add_child(Node *child);
 };
 
