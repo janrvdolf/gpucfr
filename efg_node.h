@@ -5,20 +5,25 @@
 #include "cuda_base.h"
 #include "information_set.h"
 
-
+//! The struct represents the GPU implementation of Node class.
 typedef struct efg_node_t {
-    struct efg_node_t *parent;             ///< parent
+    struct efg_node_t *parent;             ///< A pointer to the parent node.
 
-    int player;                            ///< player
-    float reach_probability;               ///< reach probability
-    float value;                           ///< value
-    INFORMATION_SET *information_set;      ///< information_set
+    int player;                            ///< Number of player.
+    float reach_probability;               ///< Reach probability of the node.
+    float value;                           ///< Values/Counterfactual value of the node.
+    INFORMATION_SET *information_set;      ///< A pointer to the information set.
 
     // children
-    int childs_count;                      ///< childs_count
-    struct efg_node_t **childs;            ///< childs
+    int childs_count;                      ///< Number of children.
+    struct efg_node_t **childs;            ///< Array of children.
 } EFGNODE;
 
+
+//! This class represents an EFG node from the EFG formalism.
+/*!
+ This class represents an EFG node from the EFG formalism.
+ * */
 class Node {
 private:
     Node *parent_ = nullptr;

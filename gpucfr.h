@@ -11,6 +11,7 @@
 
 #define THREADS_PER_BLOCK 32u // THREADS_PER_BLOCK
 
+//! Class represents CFR implementation on GPU.
 /*!
  This class implements the Counterfactual regret minimization (CFR) algorithm in C++/C/CUDA for GPU. More specifically, the original Vanilla CFR by Martin Zinkevich.
  * */
