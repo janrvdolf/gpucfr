@@ -1,6 +1,4 @@
 TODO:
-- zjistit card capability to create a grid
-
 dopoledne:
     psani reportu - co je CFR jak jsem to implementoval v gpu
 
