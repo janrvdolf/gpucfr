@@ -212,6 +212,17 @@ void GPUCFR::memcpy_gpu_to_host () {
     for (auto information_set: information_sets_) {
         information_set->memcpy_gpu_to_host();
     }
+
+    for (auto information_set: information_sets_) {
+        auto average_strategy = information_set->get_average_strategy();
+
+        std::cout << information_set->get_hash() << ", len " << average_strategy.size() << ", reach " << information_set->get_reach_probability() << std::endl;
+        std::cout << "Strategy:" << std::endl;
+        for (int i = 0; i < average_strategy.size(); i++) {
+            std::cout << "\t" << i << " " << average_strategy.at(i) << std::endl;
+        }
+
+    }
 }
 
 GPUCFR::~GPUCFR() {
