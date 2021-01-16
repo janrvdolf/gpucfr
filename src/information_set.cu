@@ -87,9 +87,13 @@ float InformationSet::get_reach_probability () {
 
 std::vector<double> InformationSet::get_average_strategy() {
     std::vector<double> returning_strategy;
+    double sum = 0.0;
     unsigned int offset = 2 + number_of_actions_;
     for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
-        returning_strategy.push_back(information_set_t_[i]);
+        sum += information_set_t_[i]; // normalizing sum
+    }
+    for (unsigned int i = offset; i < offset + number_of_actions_; i++) {
+        returning_strategy.push_back(information_set_t_[i]/sum);
     }
     return returning_strategy;
 }

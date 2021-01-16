@@ -25,6 +25,8 @@ __global__ void rm_kernel(INFORMATION_SET ** dev_infoset_data, unsigned int info
                 infoset_data[i + offset_current_strategy] = 1.0f/number_of_actions_f;
             }
         }
+
+        infoset_data[1] = 0.0;
     }
 }
 
@@ -83,7 +85,7 @@ __global__ void rp_kernel(EFGNODE ** nodes, unsigned int nodes_size) {
 
         node->reach_probability = reach_probability_minus_i;
         // updates the information set's reach probability
-        information_set[1] = reach_probability_i;
+        atomicAdd(&information_set[1], reach_probability_i);
     }
 }
 
