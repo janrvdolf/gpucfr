@@ -1,2 +1,7 @@
 grafy
 web
+
+Doma:
+    gtlib source code cleaning
+    describe kernels
+    copy CFR pseudo code from NEIL to report.
