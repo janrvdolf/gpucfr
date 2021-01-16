@@ -1,8 +1,2 @@
-TODO:
-dopoledne:
-    psani reportu - co je CFR jak jsem to implementoval v gpu
-
-odpoledne:
-    grafy
-    rozdeleni zdrojaku na src/ include
-    web
+grafy
+web
