@@ -3,7 +3,7 @@ project(gpucfr CUDA)
 
 set(CMAKE_CUDA_STANDARD 14)
 
-include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/include)
 
 set (SOURCE_FILES
         cuda_base.cpp
