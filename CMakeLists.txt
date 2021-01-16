@@ -4,12 +4,12 @@ project(gpucfr CUDA)
 set(CMAKE_CUDA_STANDARD 14)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/src)
 
-set (SOURCE_FILES
-        cuda_base.cpp
-        information_set.cu
-        efg_node.cu
-        gpucfr.cu
+file(GLOB SOURCE_FILES
+        "${PROJECT_SOURCE_DIR}/include/*.h"
+        "${PROJECT_SOURCE_DIR}/src/*.cpp"
+        "${PROJECT_SOURCE_DIR}/src/*.cu"
         )
 
 add_executable(gpucfr main.cu ${SOURCE_FILES})
