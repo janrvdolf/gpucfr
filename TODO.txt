@@ -1,5 +1,1 @@
-
 web
-
-Doma:
-    bash scripts for executables with data
