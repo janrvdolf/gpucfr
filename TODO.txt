@@ -1,7 +1,5 @@
-grafy
+
 web
 
 Doma:
-    gtlib source code cleaning
-    describe kernels
-    copy CFR pseudo code from NEIL to report.
+    bash scripts for executables with data
