@@ -1,0 +1,1 @@
+./cmake-build-debug/gpucfr_correctness data/gs2.game
