@@ -80,6 +80,10 @@ public:
      * @return Time it took in milliseconds to execute all iterations on GPU.
      */
     float elapsed_time();
+    /*!
+     * Prints average strategy from information sets.
+     */
+    void print_average_strategy();
 
 };
 

@@ -14,3 +14,6 @@ file(GLOB SOURCE_FILES
 
 add_executable(gpucfr main.cu ${SOURCE_FILES})
 set_target_properties(gpucfr PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+add_executable(gpucfr_correctness main_correctness.cu ${SOURCE_FILES})
+set_target_properties(gpucfr_correctness PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

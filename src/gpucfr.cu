@@ -214,17 +214,6 @@ void GPUCFR::memcpy_gpu_to_host () {
     for (auto information_set: information_sets_) {
         information_set->memcpy_gpu_to_host();
     }
-
-    for (auto information_set: information_sets_) {
-        auto average_strategy = information_set->get_average_strategy();
-
-        std::cout << information_set->get_hash() << ", len " << average_strategy.size() << ", reach " << information_set->get_reach_probability() << std::endl;
-        std::cout << "Strategy:" << std::endl;
-        for (int i = 0; i < average_strategy.size(); i++) {
-            std::cout << "\t" << i << " " << average_strategy.at(i) << std::endl;
-        }
-
-    }
 }
 
 GPUCFR::~GPUCFR() {
@@ -371,5 +360,16 @@ void GPUCFR::run_iteration(float iteration) {
     blocks = compute_blocks_number(data_size);
     regret_update_kernel<<<blocks, THREADS_PER_BLOCK>>>(dev_informations_sets_, data_size);
     cudaDeviceSynchronize();
+}
+
+void GPUCFR::print_average_strategy() {
+    for (auto information_set: information_sets_) {
+        auto average_strategy = information_set->get_average_strategy();
+
+        std::cout << "Information set hash " << information_set->get_hash() << std::endl;
+        for (int i = 0; i < average_strategy.size(); i++) {
+            std::cout << "\tAction index " << i << "; Action probability " << average_strategy.at(i) << std::endl;
+        }
+    }
 }
 

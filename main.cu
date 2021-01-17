@@ -9,7 +9,7 @@ int main () {
     GPUCFR instance1 = GPUCFR("../data/gs2.game");
     instance1.run_iterations(iterations);
     std::cout << "1000 iterations takes " << instance1.elapsed_time() << "ms on Goospiel 2" << std::endl;
-return 0;
+
     iterations = 5000;
     GPUCFR instance2 = GPUCFR("../data/gs2.game");
     instance2.run_iterations(iterations);
