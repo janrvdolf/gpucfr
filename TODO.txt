@@ -1,0 +1,62 @@
+ ﻿
+Student: Jan Rudolf
+
+
+Body celkem: 80 bodů => B (velmi dobře) 18.1.2021
+-----------
+* Úlohy na cvičeních          : 1+4+4 = 9 bodů
+* Domácí úlohy                  : 6+4+4 = 14 bodů
+* Implementace projektu          : 37 bodů
+* Report k projektu          : 16 bodů
+* Prezentace projektu          : 4+5 = 9 bodů
+* Penalizace              : -5b (-5b/týden zpoždění)
+
+Hodnocení domácích úloh a úloh ze cvičení najdete v brute.
+
+Semestrální projekt - implementace
+----------------------------------
+* 37 bodů (max 40 bodů)
+
+[6b] Implementace na CPU (max 6b)
+[15b] Paralelní implementace na GPU (max 15b)
+ - funkční implementace
+[3b] Ověření korektnosti řešení (max 3b)
+[2b] Kvalita implementace (CPU i GPU) (max 5b)
+ - viz poznámky níže
+[4b] Funkčnost implementovaného řešení (max 4b)
+[5b] Vygenerovaná programátorská dokumentace (max 5b)
+[2b] Testovací sady dat (max 2b)
+
+připomínky:
+ - implementované řešení je funkční, nicméně i z hlediska dalšího rozvoje postrádám
+   podrobnější analýzu, kolik času se tráví v jednotlivých kernelech (abyste věděl, co je
+   slabým místem implementace) či ohledně efektivity uložení dat (a čtení z globální paměti)
+ - kolik času trvá přenos dat do gpu
+ - neuvažoval jste o použití sdílené paměti či 1D textur, které by mohly zlepšit kešování dat
+   (nutno otestovat provedením měření)
+
+Semestrální projekt - report
+----------------------------
+* 16 bodů (max 20 bodů)
+
+[3b] Popis řešeného problému (max 3b)
+[2b] Popis efektivního řešení na CPU (max 3b)
+ - postrádám podbrobnější popis jednotlivých kroků řešení nebo alespoň pseudokód
+[3b] Návrh a popis paralelního řešení (max 4b)
+ - ocenil bych podrobnější popis jednotlivých kroků/kernelů alespoň formou pseudokódu
+[4b] Popis implementačních detailů (max 4b)
+[2b] Návrh a popis testování (max 4b)
+ - měření pouze na jedné kartě/GPU
+ - chybí specifikace testovací konfigurace počítače
+ - chybí analýza, kolik času se tráví v jednotlivých kernelech a který z implementovaných kernelů
+   je nejpomalejší
+[1b] Výsledky měření (max 1b)
+[0b] Zhodnocení výsledků a závěr (max 0b)
+[1b] Vytvoření webové stránky (max 1b)
+
+
+další připomínky:
+- zpráva je z hlediska popisu řešeného problému dostatečně obsáhlá,
+   ale postrádám trochu více informací o CUDA řešení (např. zda jste
+   zkoušel různé konfigurace mřížky či nějaké další optimalizace)
+- zpráva obsahuje překlepy
