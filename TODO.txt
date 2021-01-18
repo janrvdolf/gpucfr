@@ -1,4 +1,5 @@
- ﻿
+ Z mého pohledu je podstatné, že se Vám projekt podařilo dokončit a je funkční. Z hlediska dalšího rozvoje by to chtělo detailněji změřit délky trvání jednotlivých kernelů a provést analýzu, co je nejpomalejší částí řešení a co zpomalení způsobuje (např. čtení z globální paměti, atd.)
+
 Student: Jan Rudolf
 
 
