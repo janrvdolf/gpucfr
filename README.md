@@ -6,4 +6,6 @@ Header files are in the directory include/, and source code files are in the dir
 
 The code is tested on Ubuntu 20.04 with CUDA 11.
 
-**WARNING** The code does not use Chance for now. 
+**TODO** 
+- add a Chance node
+- more thoroughly check inputs and errors
