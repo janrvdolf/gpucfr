@@ -9,6 +9,7 @@ The code is tested on Ubuntu 20.04 with CUDA 11.
 **TODO** 
 - add a Chance node
 - more thoroughly check inputs and errors
+- fail fast if the host does not have CUDA GPU
 
 References:
 
