@@ -11,6 +11,14 @@ The code is tested on Ubuntu 20.04 with CUDA 11.
 - more thoroughly check inputs and errors
 - fail fast if the host does not have CUDA GPU
 
+Compilation on RCI cluster
+==========================
+The RCI cluster uses NVIDIA TESLA V100 with Volta architecture.
+
+    cmake -DCMAKE_CUDA_ARCHITECTURES="70" ..
+    make
+
+
 References:
 
 [1] Martin Zinkevich et al. “Regret Minimization in Games with Incomplete Information”. In: Advances in Neural Information Processing Systems 20. Ed. by J. C. Platt et al. Curran Associates, Inc., 2008, pp. 1729–1736. url: http://papers.nips.cc/paper/3306-regret-minimization-in-games-with-incomplete-information.pdf
