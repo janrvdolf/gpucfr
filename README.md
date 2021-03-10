@@ -13,6 +13,15 @@ The code is tested on Ubuntu 20.04 with CUDA 11.
 
 Compilation on RCI cluster
 ==========================
+Modules dependencies:
+
+    module add CMake
+    module add fosscuda/2020a
+
+Compilation directory:
+
+    mkdir cmake-build-debug && cd cmake-build-debug
+
 The RCI cluster uses NVIDIA TESLA V100 with Volta architecture.
 
     cmake -DCMAKE_CUDA_ARCHITECTURES="70" ..
