@@ -11,24 +11,46 @@ The code is tested on Ubuntu 20.04 with CUDA 11.
 - more thoroughly check inputs and errors
 - fail fast if the host does not have CUDA GPU
 
-Compilation on RCI cluster
+Compilation on RCI's cluster
 ==========================
-Modules dependencies:
+Ask for a computation node with GPU:
+
+
+
+Add dependencies:
 
     module add CMake
     module add fosscuda/2020a
 
-Compilation directory:
+Create a compilation directory:
 
     mkdir cmake-build-debug && cd cmake-build-debug
 
-The RCI cluster uses NVIDIA TESLA V100 with Volta architecture.
+Compile (with the choice of Volta architecture for NVIDIA Tesla V100):
 
     cmake -DCMAKE_CUDA_ARCHITECTURES="70" ..
     make
 
+Compilation on Cesnet Metacentrum
+=================================
+Ask for a computation node with GPU:
 
-References:
+
+Add dependencies:
+
+    module add cmake
+    module add cuda
+
+Create a compilation directory:
+
+    mkdir cmake-build-debug && cd cmake-build-debug
+
+Compile:
+
+    cmake ..
+    make
+References
+==========
 
 [1] Martin Zinkevich et al. “Regret Minimization in Games with Incomplete Information”. In: Advances in Neural Information Processing Systems 20. Ed. by J. C. Platt et al. Curran Associates, Inc., 2008, pp. 1729–1736. url: http://papers.nips.cc/paper/3306-regret-minimization-in-games-with-incomplete-information.pdf
 
