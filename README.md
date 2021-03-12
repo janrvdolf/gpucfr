@@ -6,10 +6,6 @@ Header files are in the directory *include*, and source code files are in the di
 
 The code is tested on Ubuntu 20.04 with CUDA 11.
 
-**TODO** 
-- add a Chance node
-- more thoroughly check inputs and errors
-
 Compilation on RCI's cluster
 ==========================
 Ask for an interactive computation node with GPU:
