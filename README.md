@@ -26,7 +26,7 @@ Compile (with the choice of Volta architecture for NVIDIA Tesla V100):
     cmake -DCMAKE_CUDA_ARCHITECTURES="70" ..
     make
 
-Compilation on Cesnet Metacentrum
+Compilation on Cesnet MetaCentrum
 =================================
 Ask for an interactive computation node with GPU:
 
