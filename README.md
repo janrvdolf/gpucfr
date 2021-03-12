@@ -6,8 +6,8 @@ Header files are in the directory *include*, and source code files are in the di
 
 The code is tested on Ubuntu 20.04 with CUDA 11.
 
-Compilation on RCI's cluster
-==========================
+Compilation on CTU's Research Center for Informatics Cluster
+============================================================
 Ask for an interactive computation node with GPU:
 
     srun -p gpufast --gres=gpu:1 --pty bash -i
