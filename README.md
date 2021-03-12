@@ -13,9 +13,9 @@ The code is tested on Ubuntu 20.04 with CUDA 11.
 
 Compilation on RCI's cluster
 ==========================
-Ask for a computation node with GPU:
+Ask for an interactive computation node with GPU:
 
-
+    srun -p gpufast --gres=gpu:1 --pty bash -i
 
 Add dependencies:
 
@@ -33,8 +33,9 @@ Compile (with the choice of Volta architecture for NVIDIA Tesla V100):
 
 Compilation on Cesnet Metacentrum
 =================================
-Ask for a computation node with GPU:
+Ask for an interactive computation node with GPU:
 
+    qsub -I -l select=1:ncpus=1:ngpus=1 -q gpu
 
 Add dependencies:
 
