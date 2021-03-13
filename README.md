@@ -4,7 +4,7 @@ The class *GPUCFR* implements the GPU version of CFR. Classes *Node* and *Inform
 
 Header files are in the directory *include*, and source code files are in the directory *src*. Data directory contains exported EFG trees for three variants of Goofspiel.
 
-The code is tested on a desktop computer with Ubuntu 20.04, CUDA 11, and GeForce GTX 1050 Mobile. Also, the code was run on a cluster with CUDA 11 and Tesla V100. 
+The code is tested on a desktop computer with Ubuntu 20.04, CUDA 11, and NVIDIA GeForce GTX 1050 Mobile. Also, the code was run on a cluster with CUDA 11 and NVIDIA Tesla V100. 
 
 Compilation on CTU's Research Center for Informatics Cluster
 ============================================================
