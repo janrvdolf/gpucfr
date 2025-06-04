@@ -45,9 +45,14 @@ Compile:
 
     cmake ..
     make
+
 References
 ==========
 
-[1] Martin Zinkevich et al. “Regret Minimization in Games with Incomplete Information”. In: Advances in Neural Information Processing Systems 20. Ed. by J. C. Platt et al. Curran Associates, Inc., 2008, pp. 1729–1736. url: http://papers.nips.cc/paper/3306-regret-minimization-in-games-with-incomplete-information.pdf
+[1] Martin Zinkevich et al. “Regret Minimization in Games with Incomplete Information”. In: Advances in Neural Information Processing Systems 20. Ed. by J. C. Platt et al. Curran Associates, Inc., 2008, pp. 1729–1736. URL: http://papers.nips.cc/paper/3306-regret-minimization-in-games-with-incomplete-information.pdf
 
-[2] Jan Rudolf "Counterfactual Regret Minimization on GPU". In: General-purpose computing on GPUs, Faculty of Electrial Engineering, Czech Technical University in Prague. url: https://cent.felk.cvut.cz/courses/GPU/archives/2020-2021/W/rudolja1/
+[2] Jan Rudolf "Counterfactual Regret Minimization on GPU". In: General-purpose computing on GPUs Archive 2020-2021, Faculty of Electrial Engineering, Czech Technical University in Prague. URL: https://cent.felk.cvut.cz/courses/GPU/archives/2020-2021/W/rudolja1/
+
+Cited by
+========
+Juho Kim "GPU-Accelerated Counterfactual Regret Minimization". URL: https://arxiv.org/abs/2408.14778
