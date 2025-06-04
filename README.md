@@ -1,4 +1,4 @@
-The GPUCFR project implements Counterfactual Regret Minimization (CFR) [1] in parallel on a CUDA-compatible NVIDIA GPU. GPUCFR uses simultaneous updates Vanilla CFR on extensive-form games. The project started as a semestral project during the General-purpose computing on GPUs [2] course at Czech Technical University in Prague.
+The GPUCFR project implements Counterfactual Regret Minimization (CFR) [1] in parallel on a CUDA-compatible NVIDIA GPU. GPUCFR uses simultaneous updates Vanilla CFR on extensive-form games. The project started as a semestral project during the General-purpose computing on GPUs [2] course at Czech Technical University in Prague. Read report https://github.com/janrvdolf/gpucfr/blob/master/report.pdf
 
 The class *GPUCFR* implements the GPU version of CFR. Classes *Node* and *InformationSet* are support classes for EFG formalism. Struct *efg_node_t* represents the *Node* class on the GPU. 
 
