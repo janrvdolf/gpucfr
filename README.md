@@ -55,4 +55,4 @@ References
 
 Cited by
 ========
-Juho Kim "GPU-Accelerated Counterfactual Regret Minimization". URL: https://arxiv.org/abs/2408.14778
+Juho Kim "GPU-Accelerated Counterfactual Regret Minimization". 2024. URL: https://arxiv.org/abs/2408.14778
