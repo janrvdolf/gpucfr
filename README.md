@@ -55,23 +55,6 @@ References
 
 [3] Jan Rudolf "Counterfactual Regret Minimization on GPU". In: General-purpose computing on GPUs Archive 2020-2021, Faculty of Electrial Engineering, Czech Technical University in Prague. URL: https://cent.felk.cvut.cz/courses/GPU/archives/2020-2021/W/rudolja1/
 
-Citing
-======
-
-If you use GPUCFR in your research, please cite as::
-
-.. code-block:: bibtex
-
-   @misc{kim2024gpuacceleratedcounterfactualregretminimization,
-         title={GPU-Accelerated Counterfactual Regret Minimization}, 
-         author={Juho Kim},
-         year={2024},
-         eprint={2408.14778},
-         archivePrefix={arXiv},
-         primaryClass={cs.GT},
-         url={https://arxiv.org/abs/2408.14778}, 
-   }
-
 Cited by
 ========
 Juho Kim "GPU-Accelerated Counterfactual Regret Minimization". 2024. URL: https://arxiv.org/abs/2408.14778
