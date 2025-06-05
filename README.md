@@ -53,7 +53,7 @@ References
 
 [2] João Reis "A GPU implementation of Counterfactual Regret Minimization". Master thesis, University of Porto, 2015. URL: https://repositorio-aberto.up.pt/bitstream/10216/83517/2/35409.pdf
 
-[3] Jan Rudolf "Counterfactual Regret Minimization on GPU". General-purpose programming on GPUs, Archive 2020-2021, Faculty of Electrial Engineering, Czech Technical University in Prague. URL: https://cent.felk.cvut.cz/courses/GPU/archives/2020-2021/W/rudolja1/
+[3] Jan Rudolf "Counterfactual Regret Minimization on GPU". General-purpose programming on GPUs, Archive 2020-2021, Faculty of Electrical Engineering, Czech Technical University in Prague, 2021 URL: https://cent.felk.cvut.cz/courses/GPU/archives/2020-2021/W/rudolja1/
 
 Cited by
 ========
